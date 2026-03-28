@@ -5,6 +5,11 @@ import { authApi } from './auth';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000';
 
+let _onAuthFailure: (() => void) | null = null;
+export function setAuthFailureCallback(cb: () => void) {
+  _onAuthFailure = cb;
+}
+
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
@@ -52,6 +57,7 @@ apiClient.interceptors.response.use(
     } catch (refreshError) {
       processQueue(refreshError, null);
       await SecureStore.deleteItemAsync('app_jwt');
+      _onAuthFailure?.();
       return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;

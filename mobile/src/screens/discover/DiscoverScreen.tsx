@@ -51,7 +51,7 @@ export default function DiscoverScreen() {
   }
 
   return (
-    <View style={styles.container} testID="discover-screen" {...({ onScanResult: handleScanResult } as any)}>
+    <View style={styles.container} testID="discover-screen">
       <View style={styles.searchRow}>
         <TextInput
           style={styles.input}

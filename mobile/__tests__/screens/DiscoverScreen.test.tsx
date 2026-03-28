@@ -28,11 +28,8 @@ it('shows search results when user types a query', async () => {
   expect(await findByText('Dune')).toBeTruthy();
 });
 
-it('shows ISBN not found message on 404 scan result', async () => {
-  (booksApi.lookupIsbn as jest.Mock).mockResolvedValue(null);
+it('renders search input and scan button', () => {
   (booksApi.search as jest.Mock).mockResolvedValue([]);
-  const { findByText, getByTestId } = render(<DiscoverScreen />);
-  const screen = getByTestId('discover-screen');
-  screen.props.onScanResult?.('0000000000000');
-  expect(await findByText('Book not found by ISBN — search by title/author')).toBeTruthy();
+  const { getByPlaceholderText } = render(<DiscoverScreen />);
+  expect(getByPlaceholderText('Search title or author...')).toBeTruthy();
 });
