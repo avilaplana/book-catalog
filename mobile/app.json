@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "Book Catalog",
+    "slug": "book-catalog",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.avg.bookcatalog"
+    },
+    "android": {
+      "package": "com.avg.bookcatalog"
+    },
+    "plugins": [
+      ["expo-camera", { "cameraPermission": "Allow Book Catalog to scan book barcodes." }],
+      "expo-secure-store"
+    ]
+  }
+}
