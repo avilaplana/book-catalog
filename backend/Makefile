@@ -28,6 +28,8 @@ db-start:
 		-e POSTGRES_PASSWORD=$(POSTGRES_PASSWORD) \
 		-p $(POSTGRES_PORT):5432 \
 		$(POSTGRES_IMAGE) || echo "Container already running"
+	@echo "Waiting for PostgreSQL to be ready..."
+	@until docker exec $(POSTGRES_CONTAINER) pg_isready -U postgres -q; do sleep 1; done
 
 # Stop and remove PostgreSQL container
 db-stop:
