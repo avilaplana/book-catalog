@@ -4,17 +4,22 @@ React Native (Expo SDK 51) app for cataloging books via Google Sign-In, ISBN sca
 
 ## Prerequisites
 
-- Node.js 18+
-- npm 9+
+- [nvm](https://github.com/nvm-sh/nvm) (recommended — keeps Node isolated per project)
 - [Expo Go](https://expo.dev/go) on your iOS or Android device (for running on a real device), or a simulator/emulator
 
 ## Setup
 
 ```bash
+# Install and use the pinned Node version (reads .nvmrc)
+nvm install
+nvm use
+
 cd mobile
 npm install
 cp .env.example .env
 ```
+
+> **No nvm?** Install it: `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash`, then reopen your terminal. Alternatively use [fnm](https://github.com/Schniz/fnm) (`brew install fnm`) which is faster.
 
 Edit `.env` and fill in:
 
