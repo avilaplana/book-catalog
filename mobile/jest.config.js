@@ -1,5 +1,6 @@
 module.exports = {
   preset: 'jest-expo',
+  fakeTimers: { enableGlobally: true },
   setupFilesAfterEnv: ['@testing-library/jest-native/extend-expect'],
   transformIgnorePatterns: [
     'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|react-navigation|@react-navigation/.*|@tanstack/.*|zustand|axios)',
