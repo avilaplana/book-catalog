@@ -4,22 +4,38 @@ React Native (Expo SDK 51) app for cataloging books via Google Sign-In, ISBN sca
 
 ## Prerequisites
 
-- [nvm](https://github.com/nvm-sh/nvm) (recommended — keeps Node isolated per project)
+- [nvm](https://github.com/nvm-sh/nvm) — manages Node versions per project
 - [Expo Go](https://expo.dev/go) on your iOS or Android device (for running on a real device), or a simulator/emulator
+
+### Install nvm
+
+```bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+```
+
+Reopen your terminal, then verify:
+
+```bash
+nvm --version
+```
+
+> **Prefer a faster alternative?** [fnm](https://github.com/Schniz/fnm) is a drop-in replacement: `brew install fnm`.
 
 ## Setup
 
 ```bash
-# Install and use the pinned Node version (reads .nvmrc)
-nvm install
-nvm use
-
 cd mobile
-npm install
-cp .env.example .env
+make setup
 ```
 
-> **No nvm?** Install it: `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash`, then reopen your terminal. Alternatively use [fnm](https://github.com/Schniz/fnm) (`brew install fnm`) which is faster.
+This installs the pinned Node version (from `.nvmrc`), runs `npm install`, and creates `.env` from `.env.example`.
+
+Then edit `.env` and fill in:
+
+| Variable | Description |
+|---|---|
+| `EXPO_PUBLIC_API_URL` | Backend base URL (e.g. `http://localhost:8000`) |
+| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | Web client ID from Google Cloud Console |
 
 Edit `.env` and fill in:
 
@@ -28,24 +44,32 @@ Edit `.env` and fill in:
 | `EXPO_PUBLIC_API_URL` | Backend base URL (e.g. `http://localhost:8000`) |
 | `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | Web client ID from Google Cloud Console |
 
+## Common commands
+
+| Command | Description |
+|---|---|
+| `make setup` | Install Node + dependencies + create `.env` |
+| `make run` | Start Expo dev server (Metro bundler) |
+| `make ios` | Open on iOS simulator |
+| `make android` | Open on Android emulator |
+| `make test` | Run all tests |
+
 ## Running the app
 
 ```bash
-npm start          # Start Expo dev server (Metro bundler)
-npm run ios        # Open on iOS simulator
-npm run android    # Open on Android emulator
+make run
 ```
 
-After `npm start`, scan the QR code with Expo Go on your device to run on a physical device.
+After the dev server starts, scan the QR code with Expo Go on your device, or press `i` for iOS simulator / `a` for Android emulator.
 
-> The backend must be running before you can sign in or load any data. See the backend README for setup instructions.
+> The backend must be running before you can sign in or load any data. See `backend/README.md` for setup instructions.
 
 ## Running tests
 
 Tests use Jest + React Native Testing Library. All tests are unit/integration tests with mocked dependencies — no device or backend needed.
 
 ```bash
-npm test           # Run all tests once (no watch)
+make test
 ```
 
 Expected output: **25 tests passing across 11 test suites** covering API client, catalog API, auth store, components (BookCard, StatusTabs, StarRating), and screens (Login, Library, BookDetail, Discover, Profile).
