@@ -21,16 +21,7 @@ Verify:
 python --version  # Python 3.12.3
 ```
 
-### 2. Create a virtual environment and install dependencies
-
-```bash
-cd backend
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-### 3. Configure environment variables
+### 2. Configure environment variables
 
 ```bash
 cp .env.example .env
@@ -43,58 +34,45 @@ JWT_SECRET=change-me-to-a-long-random-string
 GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
 ```
 
-### 4. Start PostgreSQL with Docker
-
-```bash
-docker run -d \
-  --name book-catalog-postgres \
-  -e POSTGRES_PASSWORD=postgres \
-  -p 5432:5432 \
-  postgres:14
-```
-
-Create the application database:
-```bash
-docker exec -it book-catalog-postgres createdb -U postgres book_catalog
-```
-
-### 5. Run database migrations
+### 3. Run full setup
 
 ```bash
 cd backend
-alembic upgrade head
+make setup
 ```
 
-### 6. Start the server
+This creates the virtual environment, installs dependencies, starts PostgreSQL via Docker, creates the databases, and runs migrations.
 
+---
+
+## Common Commands
+
+| Command | Description |
+|---------|-------------|
+| `make setup` | Full setup (venv, deps, postgres, databases, migrations) |
+| `make install` | Create venv and install dependencies |
+| `make db-start` | Start PostgreSQL Docker container |
+| `make db-stop` | Stop and remove PostgreSQL Docker container |
+| `make db-create` | Create `book_catalog` and `book_catalog_test` databases |
+| `make migrate` | Run Alembic migrations |
+| `make run` | Start the development server |
+| `make test` | Run the test suite |
+
+---
+
+## Development
+
+Start the server:
 ```bash
-uvicorn app.main:app --reload
+make run
 ```
 
 API docs available at http://127.0.0.1:8000/docs
 
----
-
-## Running Tests
-
-### 1. Create the test database
+## Testing
 
 ```bash
-docker exec -it book-catalog-postgres createdb -U postgres book_catalog_test
+make test
 ```
 
-### 2. Run the test suite
-
-```bash
-cd backend
-pytest tests/ -v
-```
-
-Expected output: 37 tests passing.
-
-### Stopping PostgreSQL
-
-```bash
-docker stop book-catalog-postgres
-docker rm book-catalog-postgres
-```
+Expected output: 37 tests passing. Requires PostgreSQL running (`make db-start`).
