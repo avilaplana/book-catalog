@@ -37,8 +37,9 @@ def test_issue_pair_produces_access_token_that_verify_access_accepts():
 def test_verify_access_rejects_tampered_token():
     service = make_service()
     pair = service.issue_pair(uuid4())
-    last = pair.access_token[-1]
-    tampered = pair.access_token[:-1] + ("A" if last != "A" else "B")
+    token = pair.access_token
+    mid = len(token) // 2
+    tampered = token[:mid] + ("A" if token[mid] != "A" else "B") + token[mid + 1 :]
 
     with pytest.raises(InvalidToken):
         service.verify_access(tampered)

@@ -5,7 +5,7 @@ description = "Colophon backend"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115",
-    "pyjwt>=2.9",
+    "pyjwt[crypto]>=2.9",
     "uvicorn[standard]>=0.30",
 ]
 
