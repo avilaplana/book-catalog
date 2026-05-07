@@ -2,6 +2,7 @@ import os
 from collections.abc import AsyncIterator
 from datetime import timedelta
 
+import jwt
 from fastapi import Depends, Header
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -13,6 +14,8 @@ from sqlalchemy.ext.asyncio import (
 from colophon.google_id_token_verifier import GoogleIdTokenVerifier
 from colophon.jwt_token_service import InvalidToken, JWTTokenService
 from colophon.models import User
+
+GOOGLE_JWKS_URL = "https://www.googleapis.com/oauth2/v3/certs"
 
 _engine: AsyncEngine | None = None
 _session_factory: async_sessionmaker[AsyncSession] | None = None
@@ -36,10 +39,18 @@ async def get_session() -> AsyncIterator[AsyncSession]:
         yield session
 
 
+_verifier: GoogleIdTokenVerifier | None = None
+
+
 def get_verifier() -> GoogleIdTokenVerifier:
-    raise NotImplementedError(
-        "Real Google JWKS-based verifier is wired up during the Fly deploy step of #23."
-    )
+    global _verifier
+    if _verifier is None:
+        jwks_client = jwt.PyJWKClient(GOOGLE_JWKS_URL)
+        _verifier = GoogleIdTokenVerifier(
+            client_id=os.environ["GOOGLE_CLIENT_ID"],
+            key_fetcher=lambda kid: jwks_client.get_signing_key(kid).key,
+        )
+    return _verifier
 
 
 def get_jwt_service() -> JWTTokenService:
