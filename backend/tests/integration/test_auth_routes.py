@@ -4,6 +4,7 @@ from uuid import uuid4
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
 
+import colophon.dependencies as dependencies
 from colophon.app import app
 from colophon.dependencies import get_jwt_service, get_session, get_verifier
 from colophon.google_id_token_verifier import GoogleIdentity, InvalidGoogleIdToken
@@ -119,6 +120,27 @@ async def test_post_auth_refresh_returns_rotated_token_pair():
     assert isinstance(body["access_token"], str)
     assert isinstance(body["refresh_token"], str)
     assert body["refresh_token"] != pair.refresh_token
+
+
+async def test_refresh_token_is_single_use_through_route():
+    # Reset the production singleton so this test is hermetic
+    dependencies._jwt_service = None
+    pair = get_jwt_service().issue_pair(uuid4())
+
+    try:
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            first = await client.post(
+                "/v1/auth/refresh", json={"refresh_token": pair.refresh_token}
+            )
+            second = await client.post(
+                "/v1/auth/refresh", json={"refresh_token": pair.refresh_token}
+            )
+    finally:
+        dependencies._jwt_service = None
+
+    assert first.status_code == 200
+    assert second.status_code == 401
 
 
 async def test_post_auth_refresh_returns_401_when_refresh_is_invalid():

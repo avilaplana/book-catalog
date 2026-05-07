@@ -53,12 +53,18 @@ def get_verifier() -> GoogleIdTokenVerifier:
     return _verifier
 
 
+_jwt_service: JWTTokenService | None = None
+
+
 def get_jwt_service() -> JWTTokenService:
-    return JWTTokenService(
-        secret=os.environ["JWT_SECRET"],
-        access_ttl=timedelta(minutes=15),
-        refresh_ttl=timedelta(days=30),
-    )
+    global _jwt_service
+    if _jwt_service is None:
+        _jwt_service = JWTTokenService(
+            secret=os.environ["JWT_SECRET"],
+            access_ttl=timedelta(minutes=15),
+            refresh_ttl=timedelta(days=30),
+        )
+    return _jwt_service
 
 
 async def get_current_user(
