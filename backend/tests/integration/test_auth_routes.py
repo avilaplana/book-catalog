@@ -1,4 +1,5 @@
 from datetime import timedelta
+from uuid import uuid4
 
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
@@ -8,6 +9,8 @@ from colophon.dependencies import get_jwt_service, get_session, get_verifier
 from colophon.google_id_token_verifier import GoogleIdentity, InvalidGoogleIdToken
 from colophon.jwt_token_service import JWTTokenService
 from colophon.models import User
+
+SECRET = "test-secret-at-least-thirty-two-bytes-long"
 
 
 class FakeVerifier:
@@ -71,7 +74,7 @@ async def test_post_auth_google_returns_401_problem_when_verifier_rejects(db_ses
     app.dependency_overrides[get_verifier] = lambda: RejectingVerifier()
     app.dependency_overrides[get_session] = _override_session
     app.dependency_overrides[get_jwt_service] = lambda: JWTTokenService(
-        secret="test-secret-at-least-thirty-two-bytes-long",
+        secret=SECRET,
         access_ttl=timedelta(minutes=15),
         refresh_ttl=timedelta(days=30),
     )
@@ -90,3 +93,54 @@ async def test_post_auth_google_returns_401_problem_when_verifier_rejects(db_ses
     body = response.json()
     assert body["status"] == 401
     assert body["title"] == "Invalid Google ID token"
+
+
+async def test_post_auth_refresh_returns_rotated_token_pair():
+    jwt_service = JWTTokenService(
+        secret=SECRET,
+        access_ttl=timedelta(minutes=15),
+        refresh_ttl=timedelta(days=30),
+    )
+    pair = jwt_service.issue_pair(uuid4())
+
+    app.dependency_overrides[get_jwt_service] = lambda: jwt_service
+
+    try:
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                "/v1/auth/refresh", json={"refresh_token": pair.refresh_token}
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    body = response.json()
+    assert isinstance(body["access_token"], str)
+    assert isinstance(body["refresh_token"], str)
+    assert body["refresh_token"] != pair.refresh_token
+
+
+async def test_post_auth_refresh_returns_401_when_refresh_is_invalid():
+    jwt_service = JWTTokenService(
+        secret=SECRET,
+        access_ttl=timedelta(minutes=15),
+        refresh_ttl=timedelta(days=30),
+    )
+
+    app.dependency_overrides[get_jwt_service] = lambda: jwt_service
+
+    try:
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                "/v1/auth/refresh", json={"refresh_token": "not-a-valid-token"}
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 401
+    assert response.headers["content-type"].startswith("application/problem+json")
+    body = response.json()
+    assert body["status"] == 401
+    assert body["title"] == "Invalid token"

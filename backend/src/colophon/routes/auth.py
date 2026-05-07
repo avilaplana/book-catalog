@@ -12,6 +12,10 @@ class GoogleAuthRequest(BaseModel):
     id_token: str
 
 
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+
 class TokenPairResponse(BaseModel):
     access_token: str
     refresh_token: str
@@ -37,6 +41,18 @@ async def post_google(
     )
     await session.commit()
     pair = jwt_service.issue_pair(user.id)
+    return TokenPairResponse(
+        access_token=pair.access_token,
+        refresh_token=pair.refresh_token,
+    )
+
+
+@router.post("/refresh")
+async def post_refresh(
+    body: RefreshRequest,
+    jwt_service: JWTTokenService = Depends(get_jwt_service),
+) -> TokenPairResponse:
+    pair = jwt_service.rotate_refresh(body.refresh_token)
     return TokenPairResponse(
         access_token=pair.access_token,
         refresh_token=pair.refresh_token,
