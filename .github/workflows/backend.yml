@@ -5,23 +5,37 @@ on:
     paths:
       - 'backend/**'
       - '.github/workflows/backend.yml'
+      - 'docker-compose.yml'
   pull_request:
     paths:
       - 'backend/**'
       - '.github/workflows/backend.yml'
+      - 'docker-compose.yml'
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - uses: actions/checkout@v4
+      - name: Start Postgres
+        run: docker compose up -d db
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-      - run: uv sync --locked
-      - run: uv run ruff check
-      - run: uv run ruff format --check
-      - run: uv run pytest
+      - name: Wait for Postgres
+        run: |
+          until docker compose exec -T db pg_isready -U colophon -d colophon > /dev/null 2>&1; do
+            sleep 1
+          done
+      - name: Install dependencies
+        working-directory: backend
+        run: uv sync --locked
+      - name: Lint
+        working-directory: backend
+        run: uv run ruff check
+      - name: Format check
+        working-directory: backend
+        run: uv run ruff format --check
+      - name: Tests
+        working-directory: backend
+        run: uv run pytest
