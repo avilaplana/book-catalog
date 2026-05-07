@@ -95,3 +95,72 @@ make mobile-android       # Android Emulator
 The mobile app fetches `http://localhost:8000/v1/health` on launch and shows the result. Start the backend first (`make backend-run`).
 
 **Network note:** `localhost` works from the iOS Simulator and the web target. From the Android Emulator, the host machine is reachable at `10.0.2.2` instead of `localhost` — edit `HEALTH_URL` in `mobile/App.tsx` if you target Android. From a physical device, use your machine's LAN IP.
+
+## Manual end-to-end auth test
+
+Until the mobile sign-in flow lands (Slice 1.1b, [#24](https://github.com/avilaplana/book-catalog/issues/24)), the only way to exercise `/v1/auth/google` end-to-end locally is by minting a Google ID token via the OAuth Playground and curling the backend.
+
+### Prerequisites
+
+- Backend running (`make backend-run`).
+- A Google OAuth 2.0 Client ID configured in `backend/.env` (see [Backend](#backend)).
+- `jq` installed (`brew install jq`) for the snippets below.
+
+### 1. Mint a Google ID token
+
+1. Open <https://developers.google.com/oauthplayground/>.
+2. Top-right ⚙ → tick **"Use your own OAuth credentials"** → paste your Client ID + Client Secret. Close the panel.
+3. **Step 1: Authorize APIs** — scroll to *Input your own scopes* and type:
+   ```
+   openid email profile
+   ```
+   Click **Authorize APIs** and sign in.
+4. **Step 2** — click **Exchange authorization code for tokens**. Copy the `id_token` field. Valid for ~1 hour.
+
+### 2. Run the auth flow
+
+```sh
+ID_TOKEN="<paste-id-token-here>"
+
+# Sign in — backend verifies the Google token, upserts a User, returns our JWT pair.
+RESPONSE=$(curl -s -X POST http://localhost:8000/v1/auth/google \
+  -H 'Content-Type: application/json' \
+  -d "{\"id_token\": \"$ID_TOKEN\"}")
+echo "$RESPONSE" | jq
+ACCESS=$(echo "$RESPONSE" | jq -r .access_token)
+REFRESH=$(echo "$RESPONSE" | jq -r .refresh_token)
+
+# Auth-gated route — should return 200 [] (empty Library).
+curl -s -i http://localhost:8000/v1/library/books \
+  -H "Authorization: Bearer $ACCESS"
+
+# Refresh — returns a new pair; the input refresh becomes invalid.
+curl -s -X POST http://localhost:8000/v1/auth/refresh \
+  -H 'Content-Type: application/json' \
+  -d "{\"refresh_token\": \"$REFRESH\"}" | jq
+
+# Replay the old refresh — should now 401 (single-use enforced).
+curl -s -i -X POST http://localhost:8000/v1/auth/refresh \
+  -H 'Content-Type: application/json' \
+  -d "{\"refresh_token\": \"$REFRESH\"}"
+```
+
+### 3. Verify DB persistence (optional)
+
+```sh
+make db-shell
+# inside psql:
+SELECT google_sub, email, display_name FROM users;
+```
+
+### Error paths to spot-check
+
+```sh
+# Garbage Google token → 401 application/problem+json
+curl -s -i -X POST http://localhost:8000/v1/auth/google \
+  -H 'Content-Type: application/json' \
+  -d '{"id_token": "garbage"}'
+
+# No auth on a gated route → 401 application/problem+json
+curl -s -i http://localhost:8000/v1/library/books
+```
