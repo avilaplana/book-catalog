@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from colophon.problem_details import register_problem_details_handlers
 from colophon.routes.auth import router as auth_router
 
 
@@ -13,6 +14,8 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    register_problem_details_handlers(app)
 
     @app.get("/v1/health")
     def health():
