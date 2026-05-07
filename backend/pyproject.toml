@@ -9,6 +9,7 @@ dependencies = [
     "fastapi>=0.115",
     "pyjwt[crypto]>=2.9",
     "sqlalchemy[asyncio]>=2.0",
+    "structlog>=24.0",
     "uvicorn[standard]>=0.30",
 ]
 

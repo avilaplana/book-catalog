@@ -1,12 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from colophon.logging_config import configure_logging
 from colophon.problem_details import register_problem_details_handlers
 from colophon.routes.auth import router as auth_router
 from colophon.routes.library import router as library_router
 
 
 def create_app() -> FastAPI:
+    configure_logging()
     app = FastAPI()
 
     app.add_middleware(
