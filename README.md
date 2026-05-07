@@ -38,6 +38,20 @@ Anything from Node 20 LTS onward works.
 
 The backend talks to a local Postgres started via [`docker-compose.yml`](./docker-compose.yml). Any Docker runtime works (Docker Desktop, Colima, OrbStack).
 
+## Quick start
+
+```sh
+# one-time setup
+cp backend/.env.example backend/.env
+# fill in GOOGLE_CLIENT_ID + JWT_SECRET in backend/.env
+
+make backend-run     # docker up + alembic upgrade + uvicorn --reload
+make mobile-web      # in another terminal
+make help            # any time, to list everything
+```
+
+`make backend-run` chains `db-up` → `migrate` → `uvicorn`, so a fresh checkout starts cleanly with one command. `.env` is gitignored.
+
 ## Backend
 
 The backend reads configuration from environment variables. For local dev, copy the template and fill in your values:
