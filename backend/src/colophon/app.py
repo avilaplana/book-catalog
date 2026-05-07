@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -8,6 +9,7 @@ from colophon.routes.library import router as library_router
 
 
 def create_app() -> FastAPI:
+    load_dotenv(override=False)
     configure_logging()
     app = FastAPI()
 
