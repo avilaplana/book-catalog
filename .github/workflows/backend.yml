@@ -36,6 +36,12 @@ jobs:
       - name: Format check
         working-directory: backend
         run: uv run ruff format --check
+      - name: Apply Alembic migrations
+        working-directory: backend
+        run: uv run alembic upgrade head
+      - name: Check for migration drift
+        working-directory: backend
+        run: uv run alembic check
       - name: Tests
         working-directory: backend
         run: uv run pytest
