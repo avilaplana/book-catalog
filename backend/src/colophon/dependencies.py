@@ -2,6 +2,7 @@ import os
 from collections.abc import AsyncIterator
 from datetime import timedelta
 
+from fastapi import Depends, Header
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -10,7 +11,8 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from colophon.google_id_token_verifier import GoogleIdTokenVerifier
-from colophon.jwt_token_service import JWTTokenService
+from colophon.jwt_token_service import InvalidToken, JWTTokenService
+from colophon.models import User
 
 _engine: AsyncEngine | None = None
 _session_factory: async_sessionmaker[AsyncSession] | None = None
@@ -46,3 +48,18 @@ def get_jwt_service() -> JWTTokenService:
         access_ttl=timedelta(minutes=15),
         refresh_ttl=timedelta(days=30),
     )
+
+
+async def get_current_user(
+    authorization: str | None = Header(default=None),
+    jwt_service: JWTTokenService = Depends(get_jwt_service),
+    session: AsyncSession = Depends(get_session),
+) -> User:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise InvalidToken
+    token = authorization.removeprefix("Bearer ")
+    user_id = jwt_service.verify_access(token)
+    user = await session.get(User, user_id)
+    if user is None:
+        raise InvalidToken
+    return user

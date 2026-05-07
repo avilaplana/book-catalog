@@ -8,7 +8,10 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from colophon.models import Base
+os.environ.setdefault("JWT_SECRET", "test-secret-at-least-thirty-two-bytes-long")
+os.environ.setdefault("GOOGLE_CLIENT_ID", "test-client-id.apps.googleusercontent.com")
+
+from colophon.models import Base  # noqa: E402
 
 DATABASE_URL = os.environ.get(
     "TEST_DATABASE_URL",
