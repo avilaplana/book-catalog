@@ -15,6 +15,7 @@ import { AuthSession } from './src/auth/session';
 import { useGoogleSignIn } from './src/auth/use-google-sign-in';
 import { NavRoot, type NavRootDeps } from './src/navigation/NavRoot';
 import type { LoginOutcome } from './src/screens/LoginScreen';
+import type { BookSearchResult } from './src/search/use-book-search';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
 const WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '';
@@ -91,14 +92,24 @@ export default function App() {
     [apiClient],
   );
 
+  const searchBooks = useCallback(
+    (query: string) => {
+      const params = new URLSearchParams({ q: query });
+      return apiClient.request<BookSearchResult[]>(
+        `/v1/books/search?${params.toString()}`,
+      );
+    },
+    [apiClient],
+  );
+
   const exchangeRefresh = useCallback(
     (refreshToken: string) => exchangeRefreshToken(BASE_URL, refreshToken),
     [],
   );
 
   const deps: NavRootDeps = useMemo(
-    () => ({ session, signIn, loadBooks, exchangeRefresh }),
-    [session, signIn, loadBooks, exchangeRefresh],
+    () => ({ session, signIn, loadBooks, searchBooks, exchangeRefresh }),
+    [session, signIn, loadBooks, searchBooks, exchangeRefresh],
   );
 
   return <NavRoot deps={deps} />;

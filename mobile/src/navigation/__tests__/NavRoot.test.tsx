@@ -23,6 +23,7 @@ function makeDeps(overrides: Partial<NavRootDeps> = {}): NavRootDeps {
     session: new AuthSession(memStorage()),
     signIn: jest.fn(),
     loadBooks: jest.fn().mockResolvedValue([]),
+    searchBooks: jest.fn().mockResolvedValue([]),
     exchangeRefresh: jest.fn(),
     ...overrides,
   };

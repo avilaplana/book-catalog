@@ -6,6 +6,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { TokenPair } from '../api/client';
 import type { AuthSession } from '../auth/session';
 import { useAuthSessionStatus } from '../auth/use-auth-session';
+import type { BookSearchResult } from '../search/use-book-search';
 import { LibraryScreen } from '../screens/LibraryScreen';
 import { LoginScreen, type LoginOutcome } from '../screens/LoginScreen';
 import { SearchScreen } from '../screens/SearchScreen';
@@ -15,6 +16,7 @@ export type NavRootDeps = {
   session: AuthSession;
   signIn: () => Promise<LoginOutcome>;
   loadBooks: () => Promise<unknown[]>;
+  searchBooks: (query: string) => Promise<BookSearchResult[]>;
   exchangeRefresh: (refreshToken: string) => Promise<TokenPair | null>;
 };
 
@@ -76,7 +78,14 @@ export function NavRoot({ deps }: { deps: NavRootDeps }) {
                   />
                 )}
               </Stack.Screen>
-              <Stack.Screen name="Search" component={SearchScreen} />
+              <Stack.Screen name="Search">
+                {() => (
+                  <SearchScreen
+                    searchBooks={deps.searchBooks}
+                    onSelectResult={() => undefined}
+                  />
+                )}
+              </Stack.Screen>
             </>
           ) : (
             <Stack.Screen name="Login">
