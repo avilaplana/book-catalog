@@ -2,6 +2,7 @@ import structlog
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from colophon.google_books_client import GoogleBooksUnavailable
 from colophon.google_id_token_verifier import InvalidGoogleIdToken
 from colophon.jwt_token_service import InvalidToken
 
@@ -34,5 +35,20 @@ def register_problem_details_handlers(app: FastAPI) -> None:
                 "type": "/problems/invalid-token",
                 "title": "Invalid token",
                 "status": 401,
+            },
+        )
+
+    @app.exception_handler(GoogleBooksUnavailable)
+    async def _google_books_unavailable(
+        request: Request, exc: GoogleBooksUnavailable
+    ) -> JSONResponse:
+        logger.warning("google_books_unavailable", path=request.url.path)
+        return JSONResponse(
+            status_code=503,
+            media_type="application/problem+json",
+            content={
+                "type": "/problems/google-books-unavailable",
+                "title": "Google Books unavailable",
+                "status": 503,
             },
         )
