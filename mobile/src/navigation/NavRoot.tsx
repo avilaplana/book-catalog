@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import {
+  NavigationContainer,
+  type NavigationContainerRefWithCurrent,
+} from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import type { TokenPair } from '../api/client';
@@ -9,6 +12,7 @@ import { useAuthSessionStatus } from '../auth/use-auth-session';
 import type { BookSearchResult } from '../search/use-book-search';
 import { LibraryScreen } from '../screens/LibraryScreen';
 import { LoginScreen, type LoginOutcome } from '../screens/LoginScreen';
+import { PreviewScreen } from '../screens/PreviewScreen';
 import { SearchScreen } from '../screens/SearchScreen';
 import { ToastProvider } from '../ui/toast';
 
@@ -20,15 +24,21 @@ export type NavRootDeps = {
   exchangeRefresh: (refreshToken: string) => Promise<TokenPair | null>;
 };
 
-type StackParamList = {
+export type StackParamList = {
   Login: undefined;
   Library: undefined;
   Search: undefined;
+  Preview: { result: BookSearchResult };
 };
 
 const Stack = createNativeStackNavigator<StackParamList>();
 
-export function NavRoot({ deps }: { deps: NavRootDeps }) {
+export type NavRootProps = {
+  deps: NavRootDeps;
+  navigationRef?: NavigationContainerRefWithCurrent<StackParamList>;
+};
+
+export function NavRoot({ deps, navigationRef }: NavRootProps) {
   const status = useAuthSessionStatus(deps.session);
   const [coldStartDone, setColdStartDone] = useState(false);
   const depsRef = useRef(deps);
@@ -66,7 +76,7 @@ export function NavRoot({ deps }: { deps: NavRootDeps }) {
 
   return (
     <ToastProvider>
-      <NavigationContainer>
+      <NavigationContainer ref={navigationRef}>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           {status === 'authenticated' ? (
             <>
@@ -79,12 +89,17 @@ export function NavRoot({ deps }: { deps: NavRootDeps }) {
                 )}
               </Stack.Screen>
               <Stack.Screen name="Search">
-                {() => (
+                {({ navigation }) => (
                   <SearchScreen
                     searchBooks={deps.searchBooks}
-                    onSelectResult={() => undefined}
+                    onSelectResult={(result) =>
+                      navigation.navigate('Preview', { result })
+                    }
                   />
                 )}
+              </Stack.Screen>
+              <Stack.Screen name="Preview">
+                {({ route }) => <PreviewScreen result={route.params.result} />}
               </Stack.Screen>
             </>
           ) : (

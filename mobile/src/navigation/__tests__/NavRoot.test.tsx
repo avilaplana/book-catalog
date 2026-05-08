@@ -1,7 +1,15 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react-native';
+import { createNavigationContainerRef } from '@react-navigation/native';
 
-import { NavRoot, type NavRootDeps } from '../NavRoot';
+import { NavRoot, type NavRootDeps, type StackParamList } from '../NavRoot';
 import { AuthSession, REFRESH_KEY, type SessionStorage } from '../../auth/session';
+import { type BookSearchResult } from '../../search/use-book-search';
 
 function memStorage(initial: Record<string, string> = {}): SessionStorage {
   const data = new Map(Object.entries(initial));
@@ -110,5 +118,80 @@ describe('NavRoot auth flow', () => {
     await waitFor(() =>
       expect(screen.getByText('Continue with Google')).toBeTruthy(),
     );
+  });
+});
+
+describe('NavRoot search flow', () => {
+  const sampleResults: BookSearchResult[] = [
+    {
+      google_books_id: 'vol-1',
+      title: 'Ulysses',
+      author: 'James Joyce',
+      cover_url: null,
+      description: 'A modernist novel about Leopold Bloom.',
+    },
+  ];
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  test('Library → Find a book → query → result → Preview → back preserves Search state', async () => {
+    const session = new AuthSession(memStorage({ [REFRESH_KEY]: 'r-stored' }));
+    const exchangeRefresh = jest.fn().mockResolvedValue({
+      access_token: 'a-fresh',
+      refresh_token: 'r-fresh',
+    });
+    const searchBooks = jest.fn().mockResolvedValue(sampleResults);
+    const navigationRef = createNavigationContainerRef<StackParamList>();
+
+    render(
+      <NavRoot
+        deps={makeDeps({ session, exchangeRefresh, searchBooks })}
+        navigationRef={navigationRef}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByText('Your library is empty')).toBeTruthy(),
+    );
+
+    fireEvent.press(screen.getByText('Find a book'));
+
+    await waitFor(() =>
+      expect(screen.getByPlaceholderText(/title or author/i)).toBeTruthy(),
+    );
+
+    fireEvent.changeText(
+      screen.getByPlaceholderText(/title or author/i),
+      'ulysses',
+    );
+    await act(async () => {
+      jest.advanceTimersByTime(300);
+    });
+
+    await waitFor(() => expect(screen.getByText('Ulysses')).toBeTruthy());
+
+    fireEvent.press(screen.getByText('Ulysses'));
+
+    await waitFor(() =>
+      expect(
+        screen.getByText('A modernist novel about Leopold Bloom.'),
+      ).toBeTruthy(),
+    );
+
+    await act(async () => {
+      navigationRef.goBack();
+    });
+
+    await waitFor(() => {
+      const input = screen.getByPlaceholderText(/title or author/i);
+      expect(input.props.value).toBe('ulysses');
+    });
+    expect(screen.getByText('Ulysses')).toBeTruthy();
+    expect(searchBooks).toHaveBeenCalledTimes(1);
   });
 });
