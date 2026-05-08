@@ -3,7 +3,7 @@
 .PHONY: help \
 	db-up db-down db-shell migrate \
 	backend-install backend-run backend-test backend-lint backend-format \
-	mobile-install mobile-web mobile-ios mobile-android \
+	mobile-install mobile-web mobile-ios mobile-android mobile-test \
 	test lint
 
 help:  ## Show this help.
@@ -54,8 +54,11 @@ mobile-ios:  ## Run the mobile app in iOS Simulator.
 mobile-android:  ## Run the mobile app in an Android emulator.
 	cd mobile && npm run android
 
+mobile-test:  ## Run mobile tests (jest).
+	cd mobile && npm test
+
 # --- Combined -----------------------------------------------------------------
 
-test: backend-test  ## Run all tests.
+test: backend-test mobile-test  ## Run all tests.
 
 lint: backend-lint  ## Run all lint checks.
