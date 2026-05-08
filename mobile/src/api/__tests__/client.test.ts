@@ -1,6 +1,7 @@
 import {
   AuthExpired,
   NetworkError,
+  ServerError,
   Unauthorized,
   createApiClient,
   type ApiClientDeps,
@@ -180,12 +181,17 @@ describe('ApiClient.request', () => {
     );
   });
 
-  test('5xx response → NetworkError', async () => {
+  test('5xx response → ServerError', async () => {
     const { fetch } = makeFetch([jsonResponse({}, 503)]);
     const client = createApiClient(makeDeps({ fetchImpl: fetch }));
 
     await expect(client.request('/v1/library/books')).rejects.toBeInstanceOf(
-      NetworkError,
+      ServerError,
     );
+  });
+
+  test('ServerError is also a NetworkError so generic catch-blocks still match', () => {
+    const err = new ServerError(503);
+    expect(err).toBeInstanceOf(NetworkError);
   });
 });

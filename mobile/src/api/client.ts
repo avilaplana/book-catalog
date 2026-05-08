@@ -40,6 +40,14 @@ export class NetworkError extends Error {
   }
 }
 
+export class ServerError extends NetworkError {
+  constructor(public readonly status: number) {
+    super();
+    this.name = 'ServerError';
+    this.message = `ServerError ${status}`;
+  }
+}
+
 export function createApiClient(deps: ApiClientDeps): ApiClient {
   const fetchImpl = deps.fetchImpl ?? fetch;
 
@@ -93,7 +101,7 @@ export function createApiClient(deps: ApiClientDeps): ApiClient {
       throw new Unauthorized();
     }
     if (response.status >= 500 || !response.ok) {
-      throw new NetworkError();
+      throw new ServerError(response.status);
     }
     return (await response.json()) as T;
   }
