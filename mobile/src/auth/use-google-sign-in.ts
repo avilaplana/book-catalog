@@ -11,6 +11,7 @@ export type GoogleSignInDeps = {
   webClientId: string;
   iosClientId?: string;
   androidClientId?: string;
+  onResult?: (result: GoogleSignInResult) => void;
 };
 
 export type GoogleSignInHook = {
@@ -27,14 +28,18 @@ export function useGoogleSignIn(deps: GoogleSignInDeps): GoogleSignInHook {
   });
 
   const pendingRef = useRef<((result: GoogleSignInResult) => void) | null>(null);
+  const onResultRef = useRef(deps.onResult);
+  onResultRef.current = deps.onResult;
 
   useEffect(() => {
     const result = parseGoogleAuthResponse(response as GoogleAuthResponse | null);
     if (result === null) return;
     const resolver = pendingRef.current;
+    pendingRef.current = null;
     if (resolver) {
-      pendingRef.current = null;
       resolver(result);
+    } else {
+      onResultRef.current?.(result);
     }
   }, [response]);
 

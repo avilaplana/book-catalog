@@ -3,6 +3,7 @@ export type GoogleAuthResponse =
       type: 'success';
       authentication: { idToken?: string | null } | null;
       params: { id_token?: string };
+      url?: string;
     }
   | { type: 'cancel' }
   | { type: 'dismiss' }
@@ -13,6 +14,17 @@ export type GoogleSignInResult =
   | { kind: 'cancelled' }
   | { kind: 'error'; message: string };
 
+function idTokenFromUrl(url: string | undefined): string | null {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    const fragment = new URLSearchParams(parsed.hash.replace(/^#/, ''));
+    return fragment.get('id_token') ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function parseGoogleAuthResponse(
   response: GoogleAuthResponse | null,
 ): GoogleSignInResult | null {
@@ -20,7 +32,10 @@ export function parseGoogleAuthResponse(
   switch (response.type) {
     case 'success': {
       const idToken =
-        response.authentication?.idToken ?? response.params?.id_token ?? null;
+        response.authentication?.idToken ??
+        response.params?.id_token ??
+        idTokenFromUrl(response.url) ??
+        null;
       if (!idToken) {
         return { kind: 'error', message: 'Missing id_token in Google response' };
       }
