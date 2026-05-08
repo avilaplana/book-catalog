@@ -1,0 +1,98 @@
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
+import type { TokenPair } from '../api/client';
+import type { AuthSession } from '../auth/session';
+import { useAuthSessionStatus } from '../auth/use-auth-session';
+import { LibraryScreen } from '../screens/LibraryScreen';
+import { LoginScreen, type LoginOutcome } from '../screens/LoginScreen';
+import { SearchScreen } from '../screens/SearchScreen';
+import { ToastProvider } from '../ui/toast';
+
+export type NavRootDeps = {
+  session: AuthSession;
+  signIn: () => Promise<LoginOutcome>;
+  loadBooks: () => Promise<unknown[]>;
+  exchangeRefresh: (refreshToken: string) => Promise<TokenPair | null>;
+};
+
+type StackParamList = {
+  Login: undefined;
+  Library: undefined;
+  Search: undefined;
+};
+
+const Stack = createNativeStackNavigator<StackParamList>();
+
+export function NavRoot({ deps }: { deps: NavRootDeps }) {
+  const status = useAuthSessionStatus(deps.session);
+  const [coldStartDone, setColdStartDone] = useState(false);
+  const depsRef = useRef(deps);
+  depsRef.current = deps;
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const d = depsRef.current;
+      await d.session.loadFromStorage();
+      const refresh = d.session.getRefreshToken();
+      if (refresh) {
+        const pair = await d.exchangeRefresh(refresh);
+        if (cancelled) return;
+        if (pair) {
+          await d.session.setTokens(pair);
+        } else {
+          await d.session.clear();
+        }
+      }
+      if (!cancelled) setColdStartDone(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!coldStartDone || status === 'loading') {
+    return (
+      <View style={styles.splash}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  return (
+    <ToastProvider>
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          {status === 'authenticated' ? (
+            <>
+              <Stack.Screen name="Library">
+                {({ navigation }) => (
+                  <LibraryScreen
+                    loadBooks={deps.loadBooks}
+                    onFindBook={() => navigation.navigate('Search')}
+                  />
+                )}
+              </Stack.Screen>
+              <Stack.Screen name="Search" component={SearchScreen} />
+            </>
+          ) : (
+            <Stack.Screen name="Login">
+              {() => <LoginScreen signIn={deps.signIn} />}
+            </Stack.Screen>
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+    </ToastProvider>
+  );
+}
+
+const styles = StyleSheet.create({
+  splash: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

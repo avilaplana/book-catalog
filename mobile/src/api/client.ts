@@ -1,3 +1,5 @@
+import { exchangeRefreshToken } from './refresh';
+
 export type TokenPair = {
   access_token: string;
   refresh_token: string;
@@ -57,18 +59,7 @@ export function createApiClient(deps: ApiClientDeps): ApiClient {
   async function refresh(): Promise<TokenPair | null> {
     const refreshToken = deps.getRefreshToken();
     if (!refreshToken) return null;
-    let response: Response;
-    try {
-      response = await fetchImpl(`${deps.baseUrl}/v1/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refresh_token: refreshToken }),
-      });
-    } catch {
-      return null;
-    }
-    if (!response.ok) return null;
-    return (await response.json()) as TokenPair;
+    return exchangeRefreshToken(deps.baseUrl, refreshToken, fetchImpl);
   }
 
   async function request<T>(path: string, init?: RequestInit): Promise<T> {
