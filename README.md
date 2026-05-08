@@ -63,7 +63,7 @@ cp backend/.env.example backend/.env
 
 `.env` is gitignored and loaded at app startup via `python-dotenv`. Required keys:
 
-- `GOOGLE_CLIENT_ID` — your Google OAuth 2.0 Client ID. **Not a secret** (it's the audience that signed Google ID tokens are checked against). Provision one in [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials.
+- `GOOGLE_CLIENT_ID` — your Google OAuth 2.0 Client ID. **Not a secret** (it's the audience that signed Google ID tokens are checked against). Provision one in [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials. Accepts a comma-separated list when you need to accept tokens minted for more than one client (e.g. a web client for the OAuth Playground curl flow plus an iOS client for the mobile app).
 - `JWT_SECRET` — symmetric secret for our own access/refresh JWTs. Pick something random and at least 32 bytes; e.g. `openssl rand -hex 32`.
 - `DATABASE_URL` — defaults to the local Docker Postgres at `localhost:5433`.
 

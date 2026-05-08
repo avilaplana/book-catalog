@@ -45,9 +45,11 @@ _verifier: GoogleIdTokenVerifier | None = None
 def get_verifier() -> GoogleIdTokenVerifier:
     global _verifier
     if _verifier is None:
+        client_ids = [s.strip() for s in os.environ["GOOGLE_CLIENT_ID"].split(",")]
+        client_ids = [s for s in client_ids if s]
         jwks_client = jwt.PyJWKClient(GOOGLE_JWKS_URL)
         _verifier = GoogleIdTokenVerifier(
-            client_id=os.environ["GOOGLE_CLIENT_ID"],
+            client_ids=client_ids,
             key_fetcher=lambda kid: jwks_client.get_signing_key(kid).key,
         )
     return _verifier

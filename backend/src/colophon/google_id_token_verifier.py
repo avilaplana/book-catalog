@@ -28,11 +28,13 @@ class GoogleIdTokenVerifier:
     def __init__(
         self,
         *,
-        client_id: str,
+        client_ids: list[str],
         key_fetcher: Callable[[str], object],
         clock: Callable[[], datetime] | None = None,
     ) -> None:
-        self._client_id = client_id
+        if not client_ids:
+            raise ValueError("client_ids must contain at least one entry")
+        self._client_ids = client_ids
         self._key_fetcher = key_fetcher
         self._clock = clock or _system_clock
 
@@ -44,7 +46,7 @@ class GoogleIdTokenVerifier:
                 id_token,
                 key,
                 algorithms=["RS256"],
-                audience=self._client_id,
+                audience=self._client_ids,
                 issuer=_GOOGLE_ISSUERS,
                 options={"verify_exp": False},
             )

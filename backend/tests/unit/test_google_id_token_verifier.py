@@ -61,10 +61,11 @@ def make_token(
 
 def make_verifier(
     *,
+    client_ids: list[str] | None = None,
     clock: Callable[[], datetime] | None = None,
 ) -> GoogleIdTokenVerifier:
     return GoogleIdTokenVerifier(
-        client_id=CLIENT_ID,
+        client_ids=client_ids or [CLIENT_ID],
         key_fetcher=lambda _kid: _public_key,
         clock=clock,
     )
@@ -115,6 +116,16 @@ def test_verify_rejects_token_with_wrong_audience():
 
     with pytest.raises(InvalidGoogleIdToken):
         verifier.verify(token)
+
+
+def test_verify_accepts_token_when_aud_matches_any_configured_client_id():
+    ios_client = "ios-client.apps.googleusercontent.com"
+    verifier = make_verifier(client_ids=[CLIENT_ID, ios_client])
+    token = make_token(aud=ios_client)
+
+    identity = verifier.verify(token)
+
+    assert identity.google_sub == "1234567890"
 
 
 def test_verify_rejects_token_with_wrong_issuer():
