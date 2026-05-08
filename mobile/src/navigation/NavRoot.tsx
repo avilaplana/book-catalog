@@ -77,10 +77,10 @@ export function NavRoot({ deps, navigationRef }: NavRootProps) {
   return (
     <ToastProvider>
       <NavigationContainer ref={navigationRef}>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Navigator>
           {status === 'authenticated' ? (
             <>
-              <Stack.Screen name="Library">
+              <Stack.Screen name="Library" options={{ title: 'Library' }}>
                 {({ navigation }) => (
                   <LibraryScreen
                     loadBooks={deps.loadBooks}
@@ -88,7 +88,7 @@ export function NavRoot({ deps, navigationRef }: NavRootProps) {
                   />
                 )}
               </Stack.Screen>
-              <Stack.Screen name="Search">
+              <Stack.Screen name="Search" options={{ title: 'Search' }}>
                 {({ navigation }) => (
                   <SearchScreen
                     searchBooks={deps.searchBooks}
@@ -98,12 +98,15 @@ export function NavRoot({ deps, navigationRef }: NavRootProps) {
                   />
                 )}
               </Stack.Screen>
-              <Stack.Screen name="Preview">
+              <Stack.Screen name="Preview" options={{ title: 'Preview' }}>
                 {({ route }) => <PreviewScreen result={route.params.result} />}
               </Stack.Screen>
             </>
           ) : (
-            <Stack.Screen name="Login">
+            <Stack.Screen
+              name="Login"
+              options={{ headerShown: false }}
+            >
               {() => <LoginScreen signIn={deps.signIn} />}
             </Stack.Screen>
           )}
