@@ -4,6 +4,7 @@
 	db-up db-down db-shell migrate \
 	backend-install backend-run backend-test backend-lint backend-format \
 	mobile-install mobile-web mobile-ios mobile-android mobile-test \
+	mobile-build-ios mobile-install-ios \
 	test lint
 
 help:  ## Show this help.
@@ -48,8 +49,14 @@ mobile-install:  ## Install mobile npm deps.
 mobile-web:  ## Run the mobile app in a browser.
 	cd mobile && npm run web
 
-mobile-ios:  ## Run the mobile app in iOS Simulator.
-	cd mobile && npm run ios
+mobile-ios:  ## Start Metro for the iOS dev client (run mobile-build-ios + mobile-install-ios first time).
+	cd mobile && npx expo start --dev-client
+
+mobile-build-ios:  ## Cloud-build the iOS Simulator dev client via EAS (~10–15 min).
+	cd mobile && eas build --profile development --platform ios
+
+mobile-install-ios:  ## Install the latest iOS dev build into the running Simulator.
+	cd mobile && eas build:run --platform ios
 
 mobile-android:  ## Run the mobile app in an Android emulator.
 	cd mobile && npm run android

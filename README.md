@@ -43,14 +43,17 @@ The backend talks to a local Postgres started via [`docker-compose.yml`](./docke
 ```sh
 # one-time setup
 cp backend/.env.example backend/.env
-# fill in GOOGLE_CLIENT_ID + JWT_SECRET in backend/.env
+cp mobile/.env.example mobile/.env
+# fill in the values in both .env files (see Backend / Mobile sections)
 
 make backend-run     # docker up + alembic upgrade + uvicorn --reload
-make mobile-web      # in another terminal
+make mobile-web      # in another terminal — boots the app in a browser
 make help            # any time, to list everything
 ```
 
-`make backend-run` chains `db-up` → `migrate` → `uvicorn`, so a fresh checkout starts cleanly with one command. `.env` is gitignored.
+`make backend-run` chains `db-up` → `migrate` → `uvicorn`, so a fresh checkout starts cleanly with one command. `.env` files are gitignored.
+
+The full Google sign-in flow only works on iOS Simulator via the EAS dev client — see [iOS Simulator (real Google sign-in)](#ios-simulator-real-google-sign-in).
 
 ## Backend
 
@@ -88,8 +91,7 @@ Bootstrapped with [Expo](https://docs.expo.dev/). The app shows Login → Librar
 ```sh
 make mobile-install       # npm install
 make mobile-test          # jest
-make mobile-web           # browser
-make mobile-ios           # iOS Simulator (macOS only)
+make mobile-web           # browser (no Google sign-in — see note below)
 make mobile-android       # Android Emulator
 ```
 
@@ -105,75 +107,32 @@ cp mobile/.env.example mobile/.env
 Required keys:
 
 - `EXPO_PUBLIC_API_BASE_URL` — backend base URL. `http://localhost:8000` from the iOS Simulator or web target. `http://10.0.2.2:8000` from the Android Emulator. Your machine's LAN IP for a physical device.
-- `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` — same Google OAuth Web Client ID configured in the backend's `GOOGLE_CLIENT_ID`. Used as the audience of the ID token Google mints.
+- `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` — Google OAuth Web Client ID. Audience for the web target.
+- `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` — Google OAuth iOS Client ID provisioned with this app's bundle ID (`io.colophon.book`). Required for sign-in on the iOS Simulator. Add the same value to the backend's `GOOGLE_CLIENT_ID` (CSV) so the backend accepts the resulting tokens.
 
-Anything prefixed `EXPO_PUBLIC_` is baked into the JS bundle at build time, so changes require restarting Metro (`make mobile-ios` / `mobile-web`).
+Anything prefixed `EXPO_PUBLIC_` is baked into the JS bundle at build time; changes require rebuilding the dev client (or just restarting Metro for the web target).
 
-## Manual end-to-end auth test
+### iOS Simulator (real Google sign-in)
 
-Until the mobile sign-in flow lands (Slice 1.1b, [#24](https://github.com/avilaplana/book-catalog/issues/24)), the only way to exercise `/v1/auth/google` end-to-end locally is by minting a Google ID token via the OAuth Playground and curling the backend.
+Sign-in only works in a [development build](https://docs.expo.dev/develop/development-builds/introduction/) — Expo Go is blocked by Google's OAuth policy on the shared `host.exp.Exponent` bundle ID. The dev build is a custom client with our own bundle ID.
 
-### Prerequisites
+**Prerequisites**
 
-- Backend running (`make backend-run`).
-- A Google OAuth 2.0 Client ID configured in `backend/.env` (see [Backend](#backend)).
-- `jq` installed (`brew install jq`) for the snippets below.
+- Xcode + an installed iOS Simulator runtime (`xcodebuild -downloadPlatform iOS`).
+- An [Expo account](https://expo.dev) and `eas-cli` (`npm i -g eas-cli`).
+- `eas login` once. The project is already linked (`mobile/app.json` has the EAS `projectId`); no need to re-init.
+- A Google OAuth iOS Client ID for bundle ID `io.colophon.book`, set as `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` in `mobile/.env` and added to backend `GOOGLE_CLIENT_ID` CSV.
 
-### 1. Mint a Google ID token
-
-1. Open <https://developers.google.com/oauthplayground/>.
-2. Top-right ⚙ → tick **"Use your own OAuth credentials"** → paste your Client ID + Client Secret. Close the panel.
-3. **Step 1: Authorize APIs** — scroll to *Input your own scopes* and type:
-   ```
-   openid email profile
-   ```
-   Click **Authorize APIs** and sign in.
-4. **Step 2** — click **Exchange authorization code for tokens**. Copy the `id_token` field. Valid for ~1 hour.
-
-### 2. Run the auth flow
+**Build, install, run**
 
 ```sh
-ID_TOKEN="<paste-id-token-here>"
-
-# Sign in — backend verifies the Google token, upserts a User, returns our JWT pair.
-RESPONSE=$(curl -s -X POST http://localhost:8000/v1/auth/google \
-  -H 'Content-Type: application/json' \
-  -d "{\"id_token\": \"$ID_TOKEN\"}")
-echo "$RESPONSE" | jq
-ACCESS=$(echo "$RESPONSE" | jq -r .access_token)
-REFRESH=$(echo "$RESPONSE" | jq -r .refresh_token)
-
-# Auth-gated route — should return 200 [] (empty Library).
-curl -s -i http://localhost:8000/v1/library/books \
-  -H "Authorization: Bearer $ACCESS"
-
-# Refresh — returns a new pair; the input refresh becomes invalid.
-curl -s -X POST http://localhost:8000/v1/auth/refresh \
-  -H 'Content-Type: application/json' \
-  -d "{\"refresh_token\": \"$REFRESH\"}" | jq
-
-# Replay the old refresh — should now 401 (single-use enforced).
-curl -s -i -X POST http://localhost:8000/v1/auth/refresh \
-  -H 'Content-Type: application/json' \
-  -d "{\"refresh_token\": \"$REFRESH\"}"
+make mobile-build-ios     # ~10–15 min cloud build via EAS
+make mobile-install-ios   # downloads + installs into the running Simulator
+make mobile-ios           # starts Metro bound to the dev client
 ```
 
-### 3. Verify DB persistence (optional)
+Rebuild (`mobile-build-ios`) only when native deps or `app.json` change. Day-to-day, just `make mobile-ios`.
 
-```sh
-make db-shell
-# inside psql:
-SELECT google_sub, email, display_name FROM users;
-```
+### Web target
 
-### Error paths to spot-check
-
-```sh
-# Garbage Google token → 401 application/problem+json
-curl -s -i -X POST http://localhost:8000/v1/auth/google \
-  -H 'Content-Type: application/json' \
-  -d '{"id_token": "garbage"}'
-
-# No auth on a gated route → 401 application/problem+json
-curl -s -i http://localhost:8000/v1/library/books
-```
+`make mobile-web` boots the app in a browser. Useful for screen layout work but Google sign-in does not complete here — `expo-auth-session/providers/google` on web returns access tokens only, not the ID tokens our backend verifies.
