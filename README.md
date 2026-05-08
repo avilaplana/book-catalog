@@ -83,18 +83,31 @@ make db-down              # stop Postgres
 
 ## Mobile
 
-Bootstrapped with [Expo](https://docs.expo.dev/).
+Bootstrapped with [Expo](https://docs.expo.dev/). The app shows Login → Library; signing in with Google exchanges the ID token at `/v1/auth/google` and lands on the empty-state Library screen.
 
 ```sh
 make mobile-install       # npm install
+make mobile-test          # jest
 make mobile-web           # browser
 make mobile-ios           # iOS Simulator (macOS only)
 make mobile-android       # Android Emulator
 ```
 
-The mobile app fetches `http://localhost:8000/v1/health` on launch and shows the result. Start the backend first (`make backend-run`).
+### Mobile env config
 
-**Network note:** `localhost` works from the iOS Simulator and the web target. From the Android Emulator, the host machine is reachable at `10.0.2.2` instead of `localhost` — edit `HEALTH_URL` in `mobile/App.tsx` if you target Android. From a physical device, use your machine's LAN IP.
+Copy the template and fill in:
+
+```sh
+cp mobile/.env.example mobile/.env
+# edit mobile/.env
+```
+
+Required keys:
+
+- `EXPO_PUBLIC_API_BASE_URL` — backend base URL. `http://localhost:8000` from the iOS Simulator or web target. `http://10.0.2.2:8000` from the Android Emulator. Your machine's LAN IP for a physical device.
+- `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` — same Google OAuth Web Client ID configured in the backend's `GOOGLE_CLIENT_ID`. Used as the audience of the ID token Google mints.
+
+Anything prefixed `EXPO_PUBLIC_` is baked into the JS bundle at build time, so changes require restarting Metro (`make mobile-ios` / `mobile-web`).
 
 ## Manual end-to-end auth test
 
