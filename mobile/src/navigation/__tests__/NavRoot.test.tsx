@@ -9,7 +9,9 @@ import { createNavigationContainerRef } from '@react-navigation/native';
 
 import { NavRoot, type NavRootDeps, type StackParamList } from '../NavRoot';
 import { AuthSession, REFRESH_KEY, type SessionStorage } from '../../auth/session';
+import { Conflict } from '../../api/client';
 import { type BookSearchResult } from '../../search/use-book-search';
+import { type LibraryBook } from '../../screens/LibraryScreen';
 
 function memStorage(initial: Record<string, string> = {}): SessionStorage {
   const data = new Map(Object.entries(initial));
@@ -194,5 +196,104 @@ describe('NavRoot search flow', () => {
     });
     expect(screen.getByText('Ulysses')).toBeTruthy();
     expect(searchBooks).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('NavRoot add-to-library flow', () => {
+  const searchResult: BookSearchResult = {
+    google_books_id: 'vol-1',
+    title: 'Ulysses',
+    author: 'James Joyce',
+    cover_url: null,
+    description: 'A modernist novel about Leopold Bloom.',
+  };
+  const libraryBook: LibraryBook = {
+    google_books_id: 'vol-1',
+    title: 'Ulysses',
+    author: 'James Joyce',
+    cover_url: null,
+    added_at: '2026-05-11T10:00:00Z',
+  };
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  function depsLandingOnLibrary(overrides: Partial<NavRootDeps>): NavRootDeps {
+    const session = new AuthSession(memStorage({ [REFRESH_KEY]: 'r-stored' }));
+    const exchangeRefresh = jest.fn().mockResolvedValue({
+      access_token: 'a-fresh',
+      refresh_token: 'r-fresh',
+    });
+    return makeDeps({ session, exchangeRefresh, ...overrides });
+  }
+
+  async function goToPreview(searchBooks: jest.Mock): Promise<void> {
+    await waitFor(() =>
+      expect(screen.getByText('Your library is empty')).toBeTruthy(),
+    );
+    fireEvent.press(screen.getByText('Find a book'));
+    await waitFor(() =>
+      expect(screen.getByPlaceholderText(/title or author/i)).toBeTruthy(),
+    );
+    fireEvent.changeText(
+      screen.getByPlaceholderText(/title or author/i),
+      'ulysses',
+    );
+    await act(async () => {
+      jest.advanceTimersByTime(300);
+    });
+    await waitFor(() => expect(screen.getByText('Ulysses')).toBeTruthy());
+    expect(searchBooks).toHaveBeenCalled();
+    fireEvent.press(screen.getByText('Ulysses'));
+    await waitFor(() =>
+      expect(screen.getByText('Add to library')).toBeTruthy(),
+    );
+  }
+
+  test('Add → lands on Library with the new book at the top + success toast', async () => {
+    const loadBooks = jest
+      .fn()
+      .mockResolvedValueOnce([])
+      .mockResolvedValue([libraryBook]);
+    const searchBooks = jest.fn().mockResolvedValue([searchResult]);
+    const addBook = jest.fn().mockResolvedValue(undefined);
+
+    render(
+      <NavRoot deps={depsLandingOnLibrary({ loadBooks, searchBooks, addBook })} />,
+    );
+
+    await goToPreview(searchBooks);
+
+    fireEvent.press(screen.getByText('Add to library'));
+
+    await waitFor(() =>
+      expect(screen.getByText('Added to your library.')).toBeTruthy(),
+    );
+    await waitFor(() => expect(screen.getByText('James Joyce')).toBeTruthy());
+    expect(addBook).toHaveBeenCalledWith(searchResult);
+    expect(screen.queryByText('Add to library')).toBeNull();
+  });
+
+  test('Add → 409 → stays on Preview with a duplicate toast', async () => {
+    const loadBooks = jest.fn().mockResolvedValue([]);
+    const searchBooks = jest.fn().mockResolvedValue([searchResult]);
+    const addBook = jest.fn().mockRejectedValue(new Conflict());
+
+    render(
+      <NavRoot deps={depsLandingOnLibrary({ loadBooks, searchBooks, addBook })} />,
+    );
+
+    await goToPreview(searchBooks);
+
+    fireEvent.press(screen.getByText('Add to library'));
+
+    await waitFor(() =>
+      expect(screen.getByText('Already in your library.')).toBeTruthy(),
+    );
+    expect(screen.getByText('Add to library')).toBeTruthy();
   });
 });
