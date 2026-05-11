@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -8,6 +8,8 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationOptions } from '@react-navigation/native-stack';
 
 import { AuthExpired } from '../api/client';
 import { useToast } from '../ui/toast';
@@ -27,7 +29,11 @@ export type LibraryScreenProps = {
 
 export function LibraryScreen({ loadBooks, onFindBook }: LibraryScreenProps) {
   const toast = useToast();
+  const navigation = useNavigation();
   const [books, setBooks] = useState<LibraryBook[] | null>(null);
+
+  const onFindBookRef = useRef(onFindBook);
+  onFindBookRef.current = onFindBook;
 
   const fetchBooks = useCallback(async () => {
     try {
@@ -45,9 +51,30 @@ export function LibraryScreen({ loadBooks, onFindBook }: LibraryScreenProps) {
     }
   }, [loadBooks, toast]);
 
-  useEffect(() => {
-    void fetchBooks();
-  }, [fetchBooks]);
+  useFocusEffect(
+    useCallback(() => {
+      void fetchBooks();
+    }, [fetchBooks]),
+  );
+
+  const hasBooks = books !== null && books.length > 0;
+  useLayoutEffect(() => {
+    const options: Partial<NativeStackNavigationOptions> = {
+      headerRight: hasBooks
+        ? () => (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Add a book"
+              hitSlop={12}
+              onPress={() => onFindBookRef.current()}
+            >
+              <Text style={styles.headerAdd}>＋</Text>
+            </Pressable>
+          )
+        : undefined,
+    };
+    navigation.setOptions(options);
+  }, [navigation, hasBooks]);
 
   if (books === null) {
     return (
@@ -108,6 +135,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1a73e8',
   },
   buttonLabel: { color: 'white', fontSize: 16, fontWeight: '600' },
+  headerAdd: { fontSize: 24, fontWeight: '600', color: '#1a73e8' },
   list: { padding: 16, gap: 12 },
   row: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   cover: { width: 48, height: 72, borderRadius: 4, backgroundColor: '#eee' },

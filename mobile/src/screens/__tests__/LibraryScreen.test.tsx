@@ -1,4 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { LibraryScreen, type LibraryBook } from '../LibraryScreen';
 import { AuthExpired, NetworkError } from '../../api/client';
@@ -24,12 +26,21 @@ function renderLibrary(opts: {
   loadBooks: () => Promise<LibraryBook[]>;
   onFindBook?: () => void;
 }) {
+  const Stack = createNativeStackNavigator();
   return render(
     <ToastProvider>
-      <LibraryScreen
-        loadBooks={opts.loadBooks}
-        onFindBook={opts.onFindBook ?? jest.fn()}
-      />
+      <NavigationContainer>
+        <Stack.Navigator>
+          <Stack.Screen name="Library">
+            {() => (
+              <LibraryScreen
+                loadBooks={opts.loadBooks}
+                onFindBook={opts.onFindBook ?? jest.fn()}
+              />
+            )}
+          </Stack.Screen>
+        </Stack.Navigator>
+      </NavigationContainer>
     </ToastProvider>,
   );
 }
@@ -68,6 +79,28 @@ describe('LibraryScreen', () => {
 
     await waitFor(() => expect(screen.getByText('Dubliners')).toBeTruthy());
     expect(screen.queryByText('James Joyce')).toBeNull();
+  });
+
+  test('once non-empty, a header Add button invokes onFindBook', async () => {
+    const onFindBook = jest.fn();
+    renderLibrary({
+      loadBooks: jest.fn().mockResolvedValue([ULYSSES]),
+      onFindBook,
+    });
+
+    await waitFor(() => expect(screen.getByText('Ulysses')).toBeTruthy());
+
+    fireEvent.press(await screen.findByLabelText('Add a book'));
+    expect(onFindBook).toHaveBeenCalledTimes(1);
+  });
+
+  test('no header Add button while the library is empty', async () => {
+    renderLibrary({ loadBooks: jest.fn().mockResolvedValue([]) });
+
+    await waitFor(() =>
+      expect(screen.getByText('Your library is empty')).toBeTruthy(),
+    );
+    expect(screen.queryByLabelText('Add a book')).toBeNull();
   });
 
   test('Find a book button invokes onFindBook', async () => {
