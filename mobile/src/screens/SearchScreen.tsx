@@ -47,6 +47,8 @@ export function SearchScreen({ searchBooks, onSelectResult }: SearchScreenProps)
         variant: 'error',
         onRetry: () => retryRef.current(),
       });
+    } else if (status === 'loading' || status === 'ready') {
+      toastRef.current.dismiss();
     }
   }, [status]);
 

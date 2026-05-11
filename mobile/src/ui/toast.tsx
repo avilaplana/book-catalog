@@ -20,6 +20,7 @@ export type ToastOptions = {
 
 type ToastContextValue = {
   show: (opts: ToastOptions) => void;
+  dismiss: () => void;
 };
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -55,7 +56,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const value = useMemo(() => ({ show }), [show]);
+  const value = useMemo(() => ({ show, dismiss }), [show, dismiss]);
 
   return (
     <ToastContext.Provider value={value}>

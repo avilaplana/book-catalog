@@ -154,6 +154,35 @@ describe('SearchScreen', () => {
     );
   });
 
+  test('a successful search clears a lingering error toast', async () => {
+    const searchBooks = jest
+      .fn()
+      .mockRejectedValueOnce(new ServerError(503))
+      .mockResolvedValue(sampleResults);
+    renderSearch({ searchBooks });
+
+    const input = screen.getByPlaceholderText(/title or author/i);
+    fireEvent.changeText(input, 'homero');
+    await act(async () => {
+      jest.advanceTimersByTime(300);
+    });
+    await waitFor(() =>
+      expect(
+        screen.getByText('Something went wrong. Tap to retry.'),
+      ).toBeTruthy(),
+    );
+
+    fireEvent.changeText(input, 'ulysses');
+    await act(async () => {
+      jest.advanceTimersByTime(300);
+    });
+
+    await waitFor(() => expect(screen.getByText('Ulysses')).toBeTruthy());
+    expect(
+      screen.queryByText('Something went wrong. Tap to retry.'),
+    ).toBeNull();
+  });
+
   test('tapping Retry on the toast re-runs the last query', async () => {
     const searchBooks = jest
       .fn()
