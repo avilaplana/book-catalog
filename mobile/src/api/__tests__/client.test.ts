@@ -1,5 +1,6 @@
 import {
   AuthExpired,
+  Conflict,
   NetworkError,
   ServerError,
   Unauthorized,
@@ -188,6 +189,23 @@ describe('ApiClient.request', () => {
     await expect(client.request('/v1/library/books')).rejects.toBeInstanceOf(
       ServerError,
     );
+  });
+
+  test('409 response → Conflict (not a ServerError)', async () => {
+    const { fetch } = makeFetch([
+      jsonResponse({ title: 'Book already in library' }, 409),
+    ]);
+    const client = createApiClient(makeDeps({ fetchImpl: fetch }));
+
+    const err = await client
+      .request('/v1/library/books', {
+        method: 'POST',
+        body: JSON.stringify({ google_books_id: 'g' }),
+      })
+      .catch((e: unknown) => e);
+
+    expect(err).toBeInstanceOf(Conflict);
+    expect(err).not.toBeInstanceOf(ServerError);
   });
 
   test('ServerError is also a NetworkError so generic catch-blocks still match', () => {

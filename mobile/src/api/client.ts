@@ -32,6 +32,13 @@ export class AuthExpired extends Unauthorized {
   }
 }
 
+export class Conflict extends Error {
+  constructor() {
+    super('Conflict');
+    this.name = 'Conflict';
+  }
+}
+
 export class NetworkError extends Error {
   constructor(cause?: unknown) {
     super('NetworkError');
@@ -99,6 +106,9 @@ export function createApiClient(deps: ApiClientDeps): ApiClient {
 
     if (response.status === 401) {
       throw new Unauthorized();
+    }
+    if (response.status === 409) {
+      throw new Conflict();
     }
     if (response.status >= 500 || !response.ok) {
       throw new ServerError(response.status);
