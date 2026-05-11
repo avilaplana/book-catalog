@@ -10,7 +10,7 @@ import type { TokenPair } from '../api/client';
 import type { AuthSession } from '../auth/session';
 import { useAuthSessionStatus } from '../auth/use-auth-session';
 import type { BookSearchResult } from '../search/use-book-search';
-import { LibraryScreen } from '../screens/LibraryScreen';
+import { LibraryScreen, type LibraryBook } from '../screens/LibraryScreen';
 import { LoginScreen, type LoginOutcome } from '../screens/LoginScreen';
 import { PreviewScreen } from '../screens/PreviewScreen';
 import { SearchScreen } from '../screens/SearchScreen';
@@ -19,7 +19,7 @@ import { ToastProvider } from '../ui/toast';
 export type NavRootDeps = {
   session: AuthSession;
   signIn: () => Promise<LoginOutcome>;
-  loadBooks: () => Promise<unknown[]>;
+  loadBooks: () => Promise<LibraryBook[]>;
   searchBooks: (query: string) => Promise<BookSearchResult[]>;
   exchangeRefresh: (refreshToken: string) => Promise<TokenPair | null>;
 };

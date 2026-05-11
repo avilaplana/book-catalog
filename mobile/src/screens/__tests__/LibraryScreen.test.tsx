@@ -1,11 +1,27 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
-import { LibraryScreen } from '../LibraryScreen';
+import { LibraryScreen, type LibraryBook } from '../LibraryScreen';
 import { AuthExpired, NetworkError } from '../../api/client';
 import { ToastProvider } from '../../ui/toast';
 
+const ULYSSES: LibraryBook = {
+  google_books_id: 'g-ulysses',
+  title: 'Ulysses',
+  author: 'James Joyce',
+  cover_url: 'https://example.com/u.jpg',
+  added_at: '2026-05-11T10:00:00Z',
+};
+
+const DUBLINERS: LibraryBook = {
+  google_books_id: 'g-dubliners',
+  title: 'Dubliners',
+  author: 'James Joyce',
+  cover_url: null,
+  added_at: '2026-05-10T10:00:00Z',
+};
+
 function renderLibrary(opts: {
-  loadBooks: () => Promise<unknown[]>;
+  loadBooks: () => Promise<LibraryBook[]>;
   onFindBook?: () => void;
 }) {
   return render(
@@ -32,6 +48,26 @@ describe('LibraryScreen', () => {
       expect(screen.getByText('Your library is empty')).toBeTruthy(),
     );
     expect(screen.getByText('Find a book')).toBeTruthy();
+  });
+
+  test('renders a row per book with title and author', async () => {
+    renderLibrary({
+      loadBooks: jest.fn().mockResolvedValue([ULYSSES, DUBLINERS]),
+    });
+
+    await waitFor(() => expect(screen.getByText('Ulysses')).toBeTruthy());
+    expect(screen.getByText('Dubliners')).toBeTruthy();
+    expect(screen.getAllByText('James Joyce')).toHaveLength(2);
+    expect(screen.queryByText(/book\(s\) in your library/i)).toBeNull();
+  });
+
+  test('a book with no author renders without an author line', async () => {
+    renderLibrary({
+      loadBooks: jest.fn().mockResolvedValue([{ ...DUBLINERS, author: null }]),
+    });
+
+    await waitFor(() => expect(screen.getByText('Dubliners')).toBeTruthy());
+    expect(screen.queryByText('James Joyce')).toBeNull();
   });
 
   test('Find a book button invokes onFindBook', async () => {

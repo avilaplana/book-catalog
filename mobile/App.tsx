@@ -14,6 +14,7 @@ import { secureStoreAdapter } from './src/auth/secure-store';
 import { AuthSession } from './src/auth/session';
 import { useGoogleSignIn } from './src/auth/use-google-sign-in';
 import { NavRoot, type NavRootDeps } from './src/navigation/NavRoot';
+import type { LibraryBook } from './src/screens/LibraryScreen';
 import type { LoginOutcome } from './src/screens/LoginScreen';
 import type { BookSearchResult } from './src/search/use-book-search';
 
@@ -88,7 +89,7 @@ export default function App() {
   }, [completeSignIn, googleSignIn]);
 
   const loadBooks = useCallback(
-    () => apiClient.request<unknown[]>('/v1/library/books'),
+    () => apiClient.request<LibraryBook[]>('/v1/library/books'),
     [apiClient],
   );
 
