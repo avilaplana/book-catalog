@@ -72,6 +72,34 @@ async def test_get_library_books_returns_empty_list_when_authenticated(db_sessio
     assert response.json() == []
 
 
+async def test_get_library_books_returns_added_books_newest_first(db_session):
+    jwt_service, access = await _seed_user_and_token(db_session)
+    _override_deps(db_session, jwt_service)
+    headers = {"Authorization": f"Bearer {access}"}
+    dubliners = {
+        "google_books_id": "g-dubliners",
+        "title": "Dubliners",
+        "author": "James Joyce",
+        "cover_url": None,
+    }
+
+    try:
+        async with _client() as client:
+            await client.post("/v1/library/books", json=ULYSSES_BODY, headers=headers)
+            await client.post("/v1/library/books", json=dubliners, headers=headers)
+            response = await client.get("/v1/library/books", headers=headers)
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    body = response.json()
+    assert [b["title"] for b in body] == ["Dubliners", "Ulysses"]
+    assert body[0]["google_books_id"] == "g-dubliners"
+    assert body[0]["author"] == "James Joyce"
+    assert body[0]["cover_url"] is None
+    assert "added_at" in body[0]
+
+
 async def test_post_library_books_returns_401_when_unauthenticated():
     async with _client() as client:
         response = await client.post("/v1/library/books", json=ULYSSES_BODY)

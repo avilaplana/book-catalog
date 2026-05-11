@@ -38,8 +38,13 @@ router = APIRouter(prefix="/v1/library")
 
 
 @router.get("/books")
-async def list_books(user: User = Depends(get_current_user)) -> list:
-    return []
+async def list_books(
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> list[LibraryBookResponse]:
+    service = LibraryService(session)
+    books = await service.list_books(user.id)
+    return [LibraryBookResponse.from_domain(book) for book in books]
 
 
 @router.post("/books", status_code=201)
