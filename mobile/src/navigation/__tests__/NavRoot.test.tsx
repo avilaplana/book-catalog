@@ -32,6 +32,7 @@ function makeDeps(overrides: Partial<NavRootDeps> = {}): NavRootDeps {
     signIn: jest.fn(),
     loadBooks: jest.fn().mockResolvedValue([]),
     searchBooks: jest.fn().mockResolvedValue([]),
+    addBook: jest.fn().mockResolvedValue(undefined),
     exchangeRefresh: jest.fn(),
     ...overrides,
   };

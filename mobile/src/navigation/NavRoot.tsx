@@ -21,6 +21,7 @@ export type NavRootDeps = {
   signIn: () => Promise<LoginOutcome>;
   loadBooks: () => Promise<LibraryBook[]>;
   searchBooks: (query: string) => Promise<BookSearchResult[]>;
+  addBook: (book: BookSearchResult) => Promise<void>;
   exchangeRefresh: (refreshToken: string) => Promise<TokenPair | null>;
 };
 
@@ -99,7 +100,13 @@ export function NavRoot({ deps, navigationRef }: NavRootProps) {
                 )}
               </Stack.Screen>
               <Stack.Screen name="Preview" options={{ title: 'Preview' }}>
-                {({ route }) => <PreviewScreen result={route.params.result} />}
+                {({ navigation, route }) => (
+                  <PreviewScreen
+                    result={route.params.result}
+                    addBook={() => deps.addBook(route.params.result)}
+                    onAdded={() => navigation.navigate('Library')}
+                  />
+                )}
               </Stack.Screen>
             </>
           ) : (

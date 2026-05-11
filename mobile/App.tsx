@@ -103,14 +103,29 @@ export default function App() {
     [apiClient],
   );
 
+  const addBook = useCallback(
+    async (book: BookSearchResult) => {
+      await apiClient.request<unknown>('/v1/library/books', {
+        method: 'POST',
+        body: JSON.stringify({
+          google_books_id: book.google_books_id,
+          title: book.title,
+          author: book.author,
+          cover_url: book.cover_url,
+        }),
+      });
+    },
+    [apiClient],
+  );
+
   const exchangeRefresh = useCallback(
     (refreshToken: string) => exchangeRefreshToken(BASE_URL, refreshToken),
     [],
   );
 
   const deps: NavRootDeps = useMemo(
-    () => ({ session, signIn, loadBooks, searchBooks, exchangeRefresh }),
-    [session, signIn, loadBooks, searchBooks, exchangeRefresh],
+    () => ({ session, signIn, loadBooks, searchBooks, addBook, exchangeRefresh }),
+    [session, signIn, loadBooks, searchBooks, addBook, exchangeRefresh],
   );
 
   return <NavRoot deps={deps} />;
