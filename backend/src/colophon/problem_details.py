@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from colophon.google_books_client import GoogleBooksUnavailable
 from colophon.google_id_token_verifier import InvalidGoogleIdToken
 from colophon.jwt_token_service import InvalidToken
+from colophon.library_service import BookAlreadyInLibrary
 
 logger = structlog.get_logger()
 
@@ -50,5 +51,20 @@ def register_problem_details_handlers(app: FastAPI) -> None:
                 "type": "/problems/google-books-unavailable",
                 "title": "Google Books unavailable",
                 "status": 503,
+            },
+        )
+
+    @app.exception_handler(BookAlreadyInLibrary)
+    async def _book_already_in_library(
+        request: Request, exc: BookAlreadyInLibrary
+    ) -> JSONResponse:
+        logger.info("book_already_in_library", path=request.url.path)
+        return JSONResponse(
+            status_code=409,
+            media_type="application/problem+json",
+            content={
+                "type": "/problems/book-already-in-library",
+                "title": "Book already in library",
+                "status": 409,
             },
         )
