@@ -12,6 +12,10 @@ _Avoid_: Account, Member
 A bibliographic record (title, author, cover URL) sourced from Google Books. Shared across users — one row per real-world work, identified by `google_books_id`.
 _Avoid_: Title (means something else in publishing), Edition
 
+**ISBN**:
+The 13-digit identifier printed as the barcode on a physical book (Bookland EAN-13, prefix `978`/`979`). Used only to *find* a Book — the app looks it up via Google Books (`q=isbn:…`) and still keys the resulting Book by `google_books_id`. Not stored on the Book.
+_Avoid_: Barcode (the ISBN is the data; the barcode is just how it's printed), ISBN-10
+
 **User Book**:
 The relationship between a User and a Book they have added. Carries the date the User added the Book to their Library.
 _Avoid_: Entry, Item, Record
