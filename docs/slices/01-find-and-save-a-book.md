@@ -64,7 +64,7 @@ Backend logs all errors via `structlog`; observed via `fly logs`.
 
 ## Out of scope (deferred to later slices)
 
-- ISBN barcode scanning
+- ISBN barcode scanning — delivered in [Slice 2](./02-scan-isbn-to-add-a-book.md)
 - Manual book entry (when Google Books has no match)
 - Removing a book from the Library
 - Book detail screen
