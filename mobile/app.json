@@ -17,7 +17,14 @@
       "supportsTablet": true,
       "bundleIdentifier": "io.colophon.book",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.493912556316-9b518acv803mj179euif86le4k8scb7v"
+            ]
+          }
+        ]
       }
     },
     "android": {

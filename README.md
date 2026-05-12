@@ -53,7 +53,7 @@ make help            # any time, to list everything
 
 `make backend-run` chains `db-up` → `migrate` → `uvicorn`, so a fresh checkout starts cleanly with one command. `.env` files are gitignored.
 
-The full Google sign-in flow only works on iOS Simulator via the EAS dev client — see [iOS Simulator (real Google sign-in)](#ios-simulator-real-google-sign-in).
+The full Google sign-in flow needs a [development build](https://docs.expo.dev/develop/development-builds/introduction/), not Expo Go or the web target — either the EAS iOS Simulator build ([iOS Simulator (real Google sign-in)](#ios-simulator-real-google-sign-in)) or a local build onto a plugged-in iPhone ([Physical iOS device](#physical-ios-device)).
 
 ## Backend
 
@@ -74,7 +74,7 @@ cp backend/.env.example backend/.env
 
 ```sh
 make backend-install      # uv sync
-make backend-run          # docker up + alembic upgrade + uvicorn --reload on http://localhost:8000
+make backend-run          # docker up + alembic upgrade + uvicorn --reload on http://0.0.0.0:8000 (localhost + LAN)
 make backend-test         # docker up + pytest
 make backend-lint         # ruff check + ruff format --check
 make backend-format       # ruff format
@@ -106,11 +106,11 @@ cp mobile/.env.example mobile/.env
 
 Required keys:
 
-- `EXPO_PUBLIC_API_BASE_URL` — backend base URL. `http://localhost:8000` from the iOS Simulator or web target. `http://10.0.2.2:8000` from the Android Emulator. Your machine's LAN IP for a physical device.
+- `EXPO_PUBLIC_API_BASE_URL` — backend base URL. `http://localhost:8000` from the iOS Simulator or web target. `http://10.0.2.2:8000` from the Android Emulator. **On a physical device, your Mac's LAN IP** (`ipconfig getifaddr en0`), e.g. `http://192.168.1.42:8000` — `localhost` there means the phone itself. `make backend-run` binds uvicorn to `0.0.0.0` so this works; both devices must be on the same network.
 - `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` — Google OAuth Web Client ID. Audience for the web target.
-- `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` — Google OAuth iOS Client ID provisioned with this app's bundle ID (`io.colophon.book`). Required for sign-in on the iOS Simulator. Add the same value to the backend's `GOOGLE_CLIENT_ID` (CSV) so the backend accepts the resulting tokens.
+- `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` — Google OAuth iOS Client ID provisioned with this app's bundle ID (`io.colophon.book`). Required for sign-in on the iOS Simulator and on a physical iPhone. Add the same value to the backend's `GOOGLE_CLIENT_ID` (CSV) so the backend accepts the resulting tokens. The reversed form of this ID (`com.googleusercontent.apps.<id>`) is registered as a URL scheme in `mobile/app.json` so Google's OAuth redirect can return into the app on iOS — if you ever change the client ID, update that scheme too.
 
-Anything prefixed `EXPO_PUBLIC_` is baked into the JS bundle at build time; changes require rebuilding the dev client (or just restarting Metro for the web target).
+`EXPO_PUBLIC_*` vars are inlined by Metro when it bundles the JS, not into the native binary — change `mobile/.env`, restart Metro (`Ctrl-C` then `make mobile-ios` / `npx expo start --dev-client`), and reload the app. A native rebuild is only needed when native code or `app.json` changes.
 
 ### iOS Simulator (real Google sign-in)
 
@@ -132,6 +132,32 @@ make mobile-ios           # starts Metro bound to the dev client
 ```
 
 Rebuild (`mobile-build-ios`) only when native deps or `app.json` change. Day-to-day, just `make mobile-ios`.
+
+### Physical iOS device
+
+A local development build onto a plugged-in iPhone — no EAS needed. The camera-based ISBN scanner can only be exercised this way (the Simulator has no camera).
+
+**Prerequisites**
+
+- Xcode + Command Line Tools.
+- An Apple ID added in **Xcode → Settings → Apple Accounts** (a free account works for personal-device signing — Xcode generates an "Apple Development" certificate on first build).
+- iPhone connected and unlocked; tap **Confiar / Trust** on the "Trust this computer?" prompt.
+- Same Google iOS Client ID and `mobile/.env` setup as the Simulator section above, plus `EXPO_PUBLIC_API_BASE_URL` pointed at your Mac's LAN IP (see [Mobile env config](#mobile-env-config)).
+- Backend running and reachable: `make backend-run` (binds `0.0.0.0`).
+
+**Build, install, run**
+
+```sh
+make mobile-run-ios-device   # = expo run:ios --device — prebuild + pod install + native build + install + Metro
+```
+
+First time only:
+
+- Pick your iPhone when prompted; accept the keychain prompt for the signing key (**Always Allow**).
+- After the build installs, iOS may refuse to open the app ("Untrusted Developer") — on the phone, **Settings → General → VPN & Device Management** → tap your developer profile → **Trust**.
+- iOS may also prompt to enable **Developer Mode** (**Settings → Privacy & Security → Developer Mode**) — turn it on, let the phone reboot, confirm.
+
+Then open Colophon on the phone; it connects to Metro over the LAN. Day-to-day, `make mobile-ios` (just Metro) is enough; re-run `make mobile-run-ios-device` only when native code or `app.json` changes.
 
 ### Web target
 
