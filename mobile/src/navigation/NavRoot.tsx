@@ -13,6 +13,7 @@ import type { BookSearchResult } from '../search/use-book-search';
 import { LibraryScreen, type LibraryBook } from '../screens/LibraryScreen';
 import { LoginScreen, type LoginOutcome } from '../screens/LoginScreen';
 import { PreviewScreen } from '../screens/PreviewScreen';
+import { ScanResultsScreen } from '../screens/ScanResultsScreen';
 import { SearchScreen } from '../screens/SearchScreen';
 import { ToastProvider } from '../ui/toast';
 
@@ -29,6 +30,8 @@ export type StackParamList = {
   Login: undefined;
   Library: undefined;
   Search: undefined;
+  Scanner: undefined;
+  ScanResults: { isbn: string };
   Preview: { result: BookSearchResult };
 };
 
@@ -96,6 +99,21 @@ export function NavRoot({ deps, navigationRef }: NavRootProps) {
                     onSelectResult={(result) =>
                       navigation.navigate('Preview', { result })
                     }
+                  />
+                )}
+              </Stack.Screen>
+              <Stack.Screen
+                name="ScanResults"
+                options={{ title: 'Scan result' }}
+              >
+                {({ navigation, route }) => (
+                  <ScanResultsScreen
+                    isbn={route.params.isbn}
+                    searchBooks={deps.searchBooks}
+                    onSelectResult={(result) =>
+                      navigation.navigate('Preview', { result })
+                    }
+                    onScanAgain={() => navigation.goBack()}
                   />
                 )}
               </Stack.Screen>
