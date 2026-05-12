@@ -1,18 +1,11 @@
 import { useEffect, useRef } from 'react';
-import {
-  FlatList,
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import {
   useBookSearch,
   type BookSearchResult,
 } from '../search/use-book-search';
+import { BookRow } from '../ui/BookRow';
 import { useToast } from '../ui/toast';
 
 export type SearchScreenProps = {
@@ -73,20 +66,12 @@ export function SearchScreen({ searchBooks, onSelectResult }: SearchScreenProps)
           data={results}
           keyExtractor={(item) => item.google_books_id}
           renderItem={({ item }) => (
-            <Pressable
-              style={styles.row}
+            <BookRow
+              coverUrl={item.cover_url}
+              title={item.title}
+              author={item.author}
               onPress={() => onSelectResult(item)}
-            >
-              {item.cover_url ? (
-                <Image source={{ uri: item.cover_url }} style={styles.cover} />
-              ) : (
-                <View style={[styles.cover, styles.coverPlaceholder]} />
-              )}
-              <View style={styles.rowText}>
-                <Text style={styles.title}>{item.title}</Text>
-                {item.author && <Text style={styles.author}>{item.author}</Text>}
-              </View>
-            </Pressable>
+            />
           )}
         />
       )}
@@ -103,18 +88,6 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
   },
-  row: {
-    flexDirection: 'row',
-    paddingVertical: 12,
-    borderBottomColor: '#eee',
-    borderBottomWidth: 1,
-    gap: 12,
-  },
-  cover: { width: 48, height: 72, borderRadius: 4, backgroundColor: '#eee' },
-  coverPlaceholder: { backgroundColor: '#ddd' },
-  rowText: { flex: 1, justifyContent: 'center' },
-  title: { fontSize: 16, fontWeight: '600' },
-  author: { color: '#555', marginTop: 2 },
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emptyText: { color: '#555', textAlign: 'center', paddingHorizontal: 24 },
 });
