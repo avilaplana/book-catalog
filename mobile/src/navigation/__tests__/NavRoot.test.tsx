@@ -7,6 +7,19 @@ import {
 } from '@testing-library/react-native';
 import { createNavigationContainerRef } from '@react-navigation/native';
 
+jest.mock('expo-camera', () => {
+  const React = require('react');
+  const RN = require('react-native');
+  return {
+    __esModule: true,
+    CameraView: () => React.createElement(RN.View, { testID: 'camera-view' }),
+    useCameraPermissions: () => [
+      { granted: true, canAskAgain: true },
+      jest.fn(),
+    ],
+  };
+});
+
 import { NavRoot, type NavRootDeps, type StackParamList } from '../NavRoot';
 import { AuthSession, REFRESH_KEY, type SessionStorage } from '../../auth/session';
 import { Conflict } from '../../api/client';
@@ -341,5 +354,27 @@ describe('NavRoot scan-results flow', () => {
     await waitFor(() =>
       expect(screen.getByText('There and back again.')).toBeTruthy(),
     );
+  });
+
+  test('Search → Scan header button opens the Scanner', async () => {
+    const session = new AuthSession(memStorage({ [REFRESH_KEY]: 'r-stored' }));
+    const exchangeRefresh = jest.fn().mockResolvedValue({
+      access_token: 'a-fresh',
+      refresh_token: 'r-fresh',
+    });
+
+    render(<NavRoot deps={makeDeps({ session, exchangeRefresh })} />);
+
+    await waitFor(() =>
+      expect(screen.getByText('Your library is empty')).toBeTruthy(),
+    );
+    fireEvent.press(screen.getByText('Find a book'));
+    await waitFor(() =>
+      expect(screen.getByPlaceholderText(/title or author/i)).toBeTruthy(),
+    );
+
+    fireEvent.press(screen.getByText('Scan'));
+
+    await waitFor(() => expect(screen.getByTestId('camera-view')).toBeTruthy());
   });
 });

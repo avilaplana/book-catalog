@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   NavigationContainer,
   type NavigationContainerRefWithCurrent,
@@ -13,6 +13,7 @@ import type { BookSearchResult } from '../search/use-book-search';
 import { LibraryScreen, type LibraryBook } from '../screens/LibraryScreen';
 import { LoginScreen, type LoginOutcome } from '../screens/LoginScreen';
 import { PreviewScreen } from '../screens/PreviewScreen';
+import { ScannerScreen } from '../screens/ScannerScreen';
 import { ScanResultsScreen } from '../screens/ScanResultsScreen';
 import { SearchScreen } from '../screens/SearchScreen';
 import { ToastProvider } from '../ui/toast';
@@ -92,12 +93,36 @@ export function NavRoot({ deps, navigationRef }: NavRootProps) {
                   />
                 )}
               </Stack.Screen>
-              <Stack.Screen name="Search" options={{ title: 'Search' }}>
+              <Stack.Screen
+                name="Search"
+                options={({ navigation }) => ({
+                  title: 'Search',
+                  headerRight: () => (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Scan a barcode"
+                      hitSlop={12}
+                      onPress={() => navigation.navigate('Scanner')}
+                    >
+                      <Text style={styles.headerScan}>Scan</Text>
+                    </Pressable>
+                  ),
+                })}
+              >
                 {({ navigation }) => (
                   <SearchScreen
                     searchBooks={deps.searchBooks}
                     onSelectResult={(result) =>
                       navigation.navigate('Preview', { result })
+                    }
+                  />
+                )}
+              </Stack.Screen>
+              <Stack.Screen name="Scanner" options={{ title: 'Scan a barcode' }}>
+                {({ navigation }) => (
+                  <ScannerScreen
+                    onScanned={(isbn) =>
+                      navigation.navigate('ScanResults', { isbn })
                     }
                   />
                 )}
@@ -147,4 +172,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  headerScan: { fontSize: 16, fontWeight: '600', color: '#1a73e8' },
 });
