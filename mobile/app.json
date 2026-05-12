@@ -33,7 +33,13 @@
     },
     "plugins": [
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Colophon uses the camera to scan book barcodes."
+        }
+      ]
     ],
     "extra": {
       "eas": {
