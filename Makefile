@@ -4,7 +4,7 @@
 	db-up db-down db-shell migrate \
 	backend-install backend-run backend-test backend-lint backend-format \
 	mobile-install mobile-web mobile-ios mobile-android mobile-test \
-	mobile-build-ios mobile-install-ios \
+	mobile-build-ios mobile-install-ios mobile-run-ios-device \
 	test lint
 
 help:  ## Show this help.
@@ -29,8 +29,8 @@ migrate:  ## Apply Alembic migrations to the local DB.
 backend-install:  ## Install backend deps with uv.
 	cd backend && uv sync
 
-backend-run: db-up migrate  ## Start the backend (uvicorn with reload). Reads backend/.env.
-	cd backend && uv run uvicorn colophon.app:app --reload
+backend-run: db-up migrate  ## Start the backend (uvicorn --reload, bound to 0.0.0.0 so phones on the LAN can reach it). Reads backend/.env.
+	cd backend && uv run uvicorn colophon.app:app --reload --host 0.0.0.0
 
 backend-test: db-up  ## Run backend tests against a live Postgres.
 	cd backend && uv run pytest
@@ -54,6 +54,9 @@ mobile-ios:  ## Start Metro for the iOS dev client (run mobile-build-ios + mobil
 
 mobile-build-ios:  ## Cloud-build the iOS Simulator dev client via EAS (~10–15 min).
 	cd mobile && eas build --profile development --platform ios
+
+mobile-run-ios-device:  ## Local-build & install the dev client onto a plugged-in iPhone, then start Metro (needs Xcode signing).
+	cd mobile && npx expo run:ios --device
 
 mobile-install-ios:  ## Install the latest iOS dev build into the running Simulator.
 	cd mobile && eas build:run --platform ios
