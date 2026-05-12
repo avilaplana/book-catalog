@@ -297,3 +297,49 @@ describe('NavRoot add-to-library flow', () => {
     expect(screen.getByText('Add to library')).toBeTruthy();
   });
 });
+
+describe('NavRoot scan-results flow', () => {
+  const sampleResults: BookSearchResult[] = [
+    {
+      google_books_id: 'vol-1',
+      title: 'The Hobbit',
+      author: 'J. R. R. Tolkien',
+      cover_url: null,
+      description: 'There and back again.',
+    },
+  ];
+
+  test('navigating to ScanResults looks the ISBN up and a result leads to Preview', async () => {
+    const session = new AuthSession(memStorage({ [REFRESH_KEY]: 'r-stored' }));
+    const exchangeRefresh = jest.fn().mockResolvedValue({
+      access_token: 'a-fresh',
+      refresh_token: 'r-fresh',
+    });
+    const searchBooks = jest.fn().mockResolvedValue(sampleResults);
+    const navigationRef = createNavigationContainerRef<StackParamList>();
+
+    render(
+      <NavRoot
+        deps={makeDeps({ session, exchangeRefresh, searchBooks })}
+        navigationRef={navigationRef}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByText('Your library is empty')).toBeTruthy(),
+    );
+
+    await act(async () => {
+      navigationRef.navigate('ScanResults', { isbn: '9780261103573' });
+    });
+
+    await waitFor(() => expect(screen.getByText('The Hobbit')).toBeTruthy());
+    expect(searchBooks).toHaveBeenCalledWith('isbn:9780261103573');
+
+    fireEvent.press(screen.getByText('The Hobbit'));
+
+    await waitFor(() =>
+      expect(screen.getByText('There and back again.')).toBeTruthy(),
+    );
+  });
+});
