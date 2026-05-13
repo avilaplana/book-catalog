@@ -1,5 +1,5 @@
 import os
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from datetime import timedelta
 from typing import Any
 
@@ -76,20 +76,31 @@ def get_jwt_service() -> JWTTokenService:
 _google_books_client: GoogleBooksClient | None = None
 
 
+def _build_google_books_client(
+    api_key: str | None,
+    *,
+    client_factory: Callable[[], httpx.AsyncClient] = lambda: httpx.AsyncClient(
+        timeout=10.0
+    ),
+) -> GoogleBooksClient:
+    async def fetch(query: str) -> dict[str, Any]:
+        params: dict[str, Any] = {"q": query, "maxResults": 20}
+        if api_key:
+            params["key"] = api_key
+        async with client_factory() as http:
+            response = await http.get(GOOGLE_BOOKS_URL, params=params)
+            response.raise_for_status()
+            return response.json()
+
+    return GoogleBooksClient(fetch=fetch)
+
+
 def get_google_books_client() -> GoogleBooksClient:
     global _google_books_client
     if _google_books_client is None:
-
-        async def fetch(query: str) -> dict[str, Any]:
-            async with httpx.AsyncClient(timeout=10.0) as http:
-                response = await http.get(
-                    GOOGLE_BOOKS_URL,
-                    params={"q": query, "maxResults": 20},
-                )
-                response.raise_for_status()
-                return response.json()
-
-        _google_books_client = GoogleBooksClient(fetch=fetch)
+        _google_books_client = _build_google_books_client(
+            os.environ.get("GOOGLE_BOOKS_API_KEY")
+        )
     return _google_books_client
 
 
