@@ -59,6 +59,8 @@ def _normalize(item: dict[str, Any]) -> BookSearchResult | None:
 
     image_links = volume_info.get("imageLinks") or {}
     cover_url = image_links.get("thumbnail") if isinstance(image_links, dict) else None
+    if cover_url and cover_url.startswith("http://"):
+        cover_url = "https://" + cover_url.removeprefix("http://")
 
     description = volume_info.get("description")
 

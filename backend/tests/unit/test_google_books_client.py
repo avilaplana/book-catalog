@@ -104,6 +104,25 @@ async def test_search_returns_none_for_missing_optional_fields():
     assert results[0].description is None
 
 
+async def test_search_upgrades_http_thumbnail_to_https():
+    fetch = FakeFetch(
+        make_response(
+            [
+                make_volume(
+                    thumbnail="http://books.google.com/books/content?id=abc&zoom=1",
+                )
+            ]
+        )
+    )
+    client = make_client(fetch)
+
+    results = await client.search("anything")
+
+    assert results[0].cover_url == (
+        "https://books.google.com/books/content?id=abc&zoom=1"
+    )
+
+
 async def test_search_returns_empty_list_when_response_has_no_items():
     fetch = FakeFetch(make_response(None))
     client = make_client(fetch)
