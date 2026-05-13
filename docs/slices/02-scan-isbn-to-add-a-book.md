@@ -95,15 +95,17 @@ No change. No migration.
 
 ## Definition of done
 
-- [ ] From the Search screen, tapping "Scan" opens the camera; granting permission shows a live viewfinder with the framing guide and torch toggle.
-- [ ] Scanning a real book's barcode lands on ScanResults showing the matching book(s); tapping one opens Preview; "Add" puts it at the top of the Library with the "Added to your library." toast.
-- [ ] Scanning a non-book EAN-13 keeps the camera live and shows the brief hint, no navigation.
-- [ ] An ISBN with no Google Books match shows "No book found for this barcode." with a working "Scan again" button.
-- [ ] Denying camera permission shows the explanatory message with a working "Open Settings" button — no dead end.
-- [ ] Network / 5xx during the lookup show the existing retry toasts; tapping retries the lookup.
-- [ ] Duplicate add still returns 409 with the "Already in your library." toast.
-- [ ] Back navigation from Preview → ScanResults → Scanner → Search works at every step; returning to the Scanner re-enables scanning.
-- [ ] Mobile builds and runs on iOS and Android via the dev/EAS build (camera requires the native module).
+- [x] From the Search screen, tapping "Scan" opens the camera; granting permission shows a live viewfinder with the framing guide and torch toggle.
+- [x] Scanning a real book's barcode lands on ScanResults showing the matching book(s); tapping one opens Preview; "Add" puts it at the top of the Library with the "Added to your library." toast.
+- [x] Scanning a non-book EAN-13 keeps the camera live and shows the brief hint, no navigation.
+- [x] An ISBN with no Google Books match shows "No book found for this barcode." with a working "Scan again" button.
+- [x] Denying camera permission shows the explanatory message with a working "Open Settings" button — no dead end.
+- [x] Network / 5xx during the lookup show the existing retry toasts; tapping retries the lookup.
+- [x] Duplicate add still returns 409 with the "Already in your library." toast.
+- [x] Back navigation from Preview → ScanResults → Scanner → Search works at every step; returning to the Scanner re-enables scanning.
+- [x] Mobile builds and runs on iOS via a local dev build (`expo run:ios --device`) — verified on a physical iPhone 12 Pro. Android uses the same dev-build path (not yet run on a device this slice).
+
+> Verified end-to-end on an iPhone 12 Pro (2026-05-12). The local device dev build also surfaced a pre-existing gap fixed in PR #43 (the reversed Google iOS client ID needed registering as a `CFBundleURLTypes` scheme; `make backend-run` now binds `0.0.0.0`).
 
 ## Reference
 
