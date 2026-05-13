@@ -12,7 +12,9 @@ async def test_build_google_books_client_includes_api_key_when_provided():
 
     client = dependencies._build_google_books_client(
         api_key="test-key",
-        client_factory=lambda: httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+        client_factory=lambda: httpx.AsyncClient(
+            transport=httpx.MockTransport(handler)
+        ),
     )
 
     await client.search("alice")
@@ -31,7 +33,9 @@ async def test_build_google_books_client_omits_api_key_when_absent():
 
     client = dependencies._build_google_books_client(
         api_key=None,
-        client_factory=lambda: httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+        client_factory=lambda: httpx.AsyncClient(
+            transport=httpx.MockTransport(handler)
+        ),
     )
 
     await client.search("alice")
