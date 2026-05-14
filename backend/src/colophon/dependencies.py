@@ -1,3 +1,4 @@
+import asyncio
 import os
 from collections.abc import AsyncIterator, Callable
 from datetime import timedelta
@@ -5,6 +6,7 @@ from typing import Any
 
 import httpx
 import jwt
+import structlog
 from fastapi import Depends, Header
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -76,21 +78,49 @@ def get_jwt_service() -> JWTTokenService:
 _google_books_client: GoogleBooksClient | None = None
 
 
+_RETRYABLE_STATUSES = {502, 503, 504}
+_retry_logger = structlog.get_logger()
+
+
 def _build_google_books_client(
     api_key: str | None,
     *,
     client_factory: Callable[[], httpx.AsyncClient] = lambda: httpx.AsyncClient(
         timeout=10.0
     ),
+    backoff_seconds: tuple[float, ...] = (0.2, 0.5),
 ) -> GoogleBooksClient:
     async def fetch(query: str) -> dict[str, Any]:
         params: dict[str, Any] = {"q": query, "maxResults": 20}
         if api_key:
             params["key"] = api_key
-        async with client_factory() as http:
-            response = await http.get(GOOGLE_BOOKS_URL, params=params)
-            response.raise_for_status()
-            return response.json()
+        attempts = len(backoff_seconds) + 1
+        for attempt in range(attempts):
+            try:
+                async with client_factory() as http:
+                    response = await http.get(GOOGLE_BOOKS_URL, params=params)
+                    response.raise_for_status()
+                    return response.json()
+            except httpx.HTTPStatusError as exc:
+                if exc.response.status_code not in _RETRYABLE_STATUSES:
+                    raise
+                if attempt == attempts - 1:
+                    raise
+                _retry_logger.warning(
+                    "google_books_retry",
+                    attempt=attempt + 1,
+                    status=exc.response.status_code,
+                )
+            except httpx.RequestError as exc:
+                if attempt == attempts - 1:
+                    raise
+                _retry_logger.warning(
+                    "google_books_retry",
+                    attempt=attempt + 1,
+                    error=type(exc).__name__,
+                )
+            await asyncio.sleep(backoff_seconds[attempt])
+        raise RuntimeError("unreachable")
 
     return GoogleBooksClient(fetch=fetch)
 
