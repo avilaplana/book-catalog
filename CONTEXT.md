@@ -13,8 +13,8 @@ A bibliographic record (title, author, cover URL) sourced from Google Books. Sha
 _Avoid_: Title (means something else in publishing), Edition
 
 **ISBN**:
-The 13-digit identifier printed as the barcode on a physical book (Bookland EAN-13, prefix `978`/`979`). Used only to *find* a Book — the app looks it up via Google Books (`q=isbn:…`) and still keys the resulting Book by `google_books_id`. Not stored on the Book.
-_Avoid_: Barcode (the ISBN is the data; the barcode is just how it's printed), ISBN-10
+The 13-digit identifier printed as the barcode on a physical book (Bookland EAN-13, prefix `978`/`979`). Used to *find* a Book via Google Books (`q=isbn:…`); the canonical lookup key on `Book` remains `google_books_id`, not the ISBN. Stored on `Book` as metadata (both `isbn_13` and `isbn_10` when Google Books returns them) so the user can confirm a scanned barcode matches the book on screen.
+_Avoid_: Barcode (the ISBN is the data; the barcode is just how it's printed); using ISBN as a primary identifier.
 
 **User Book**:
 The relationship between a User and a Book they have added. Carries the date the User added the Book to their Library.

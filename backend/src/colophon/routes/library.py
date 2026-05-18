@@ -14,6 +14,15 @@ class AddBookRequest(BaseModel):
     title: str
     author: str | None = None
     cover_url: str | None = None
+    subtitle: str | None = None
+    publisher: str | None = None
+    published_date: str | None = None
+    description: str | None = None
+    page_count: int | None = None
+    categories: str | None = None
+    language: str | None = None
+    isbn_13: str | None = None
+    isbn_10: str | None = None
 
 
 class LibraryBookResponse(BaseModel):
@@ -60,6 +69,15 @@ async def add_book(
         title=body.title,
         author=body.author,
         cover_url=body.cover_url,
+        subtitle=body.subtitle,
+        publisher=body.publisher,
+        published_date=body.published_date,
+        description=body.description,
+        page_count=body.page_count,
+        categories=body.categories,
+        language=body.language,
+        isbn_13=body.isbn_13,
+        isbn_10=body.isbn_10,
     )
     await session.commit()
     return LibraryBookResponse.from_domain(added)

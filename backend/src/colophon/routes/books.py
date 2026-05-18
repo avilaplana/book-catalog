@@ -12,6 +12,14 @@ class BookSearchResultResponse(BaseModel):
     author: str | None
     cover_url: str | None
     description: str | None
+    subtitle: str | None
+    publisher: str | None
+    published_date: str | None
+    language: str | None
+    page_count: int | None
+    categories: str | None
+    isbn_13: str | None
+    isbn_10: str | None
 
     @classmethod
     def from_domain(cls, result: BookSearchResult) -> "BookSearchResultResponse":
@@ -21,6 +29,14 @@ class BookSearchResultResponse(BaseModel):
             author=result.author,
             cover_url=result.cover_url,
             description=result.description,
+            subtitle=result.subtitle,
+            publisher=result.publisher,
+            published_date=result.published_date,
+            language=result.language,
+            page_count=result.page_count,
+            categories=result.categories,
+            isbn_13=result.isbn_13,
+            isbn_10=result.isbn_10,
         )
 
 

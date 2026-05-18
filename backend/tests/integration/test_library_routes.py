@@ -131,6 +131,56 @@ async def test_post_library_books_adds_a_book_and_returns_201(db_session):
     assert "added_at" in body
 
 
+async def test_post_library_books_accepts_and_persists_rich_fields(db_session):
+    from sqlalchemy import select
+
+    from colophon.models import Book
+
+    jwt_service, access = await _seed_user_and_token(db_session)
+    _override_deps(db_session, jwt_service)
+    body = {
+        "google_books_id": "g-lotr",
+        "title": "The Lord of the Rings",
+        "author": "J.R.R. Tolkien",
+        "cover_url": "https://example.com/lotr.jpg",
+        "subtitle": "One Volume Edition",
+        "publisher": "HarperCollins",
+        "published_date": "2005-10-25",
+        "description": "An epic high-fantasy novel.",
+        "language": "en",
+        "page_count": 1216,
+        "categories": "Fiction, Fantasy",
+        "isbn_13": "9780261103573",
+        "isbn_10": "0261103571",
+    }
+
+    try:
+        async with _client() as client:
+            response = await client.post(
+                "/v1/library/books",
+                json=body,
+                headers={"Authorization": f"Bearer {access}"},
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 201
+
+    db_session.expire_all()
+    row = (
+        await db_session.execute(select(Book).where(Book.google_books_id == "g-lotr"))
+    ).scalar_one()
+    assert row.subtitle == "One Volume Edition"
+    assert row.publisher == "HarperCollins"
+    assert row.published_date == "2005-10-25"
+    assert row.description == "An epic high-fantasy novel."
+    assert row.language == "en"
+    assert row.page_count == 1216
+    assert row.categories == "Fiction, Fantasy"
+    assert row.isbn_13 == "9780261103573"
+    assert row.isbn_10 == "0261103571"
+
+
 async def test_post_library_books_returns_409_when_already_in_library(db_session):
     jwt_service, access = await _seed_user_and_token(db_session)
     _override_deps(db_session, jwt_service)
