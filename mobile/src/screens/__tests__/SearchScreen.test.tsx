@@ -10,24 +10,23 @@ import { NetworkError, ServerError } from '../../api/client';
 import {
   type BookSearchResult,
 } from '../../search/use-book-search';
+import { aBookSearchResult } from '../../search/test-fixtures';
 import { SearchScreen } from '../SearchScreen';
 import { ToastProvider } from '../../ui/toast';
 
 const sampleResults: BookSearchResult[] = [
-  {
+  aBookSearchResult({
     google_books_id: 'vol-1',
     title: 'Ulysses',
     author: 'James Joyce',
     cover_url: 'https://example.com/u.jpg',
     description: 'A modernist novel.',
-  },
-  {
+  }),
+  aBookSearchResult({
     google_books_id: 'vol-2',
     title: 'The Odyssey',
     author: 'Homer',
-    cover_url: null,
-    description: null,
-  },
+  }),
 ];
 
 function renderSearch(opts: {

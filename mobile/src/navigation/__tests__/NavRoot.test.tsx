@@ -24,6 +24,7 @@ import { NavRoot, type NavRootDeps, type StackParamList } from '../NavRoot';
 import { AuthSession, REFRESH_KEY, type SessionStorage } from '../../auth/session';
 import { Conflict } from '../../api/client';
 import { type BookSearchResult } from '../../search/use-book-search';
+import { aBookSearchResult } from '../../search/test-fixtures';
 import { type LibraryBook } from '../../screens/LibraryScreen';
 
 function memStorage(initial: Record<string, string> = {}): SessionStorage {
@@ -139,13 +140,12 @@ describe('NavRoot auth flow', () => {
 
 describe('NavRoot search flow', () => {
   const sampleResults: BookSearchResult[] = [
-    {
+    aBookSearchResult({
       google_books_id: 'vol-1',
       title: 'Ulysses',
       author: 'James Joyce',
-      cover_url: null,
       description: 'A modernist novel about Leopold Bloom.',
-    },
+    }),
   ];
 
   beforeEach(() => {
@@ -213,13 +213,12 @@ describe('NavRoot search flow', () => {
 });
 
 describe('NavRoot add-to-library flow', () => {
-  const searchResult: BookSearchResult = {
+  const searchResult: BookSearchResult = aBookSearchResult({
     google_books_id: 'vol-1',
     title: 'Ulysses',
     author: 'James Joyce',
-    cover_url: null,
     description: 'A modernist novel about Leopold Bloom.',
-  };
+  });
   const libraryBook: LibraryBook = {
     google_books_id: 'vol-1',
     title: 'Ulysses',
@@ -313,13 +312,12 @@ describe('NavRoot add-to-library flow', () => {
 
 describe('NavRoot scan-results flow', () => {
   const sampleResults: BookSearchResult[] = [
-    {
+    aBookSearchResult({
       google_books_id: 'vol-1',
       title: 'The Hobbit',
       author: 'J. R. R. Tolkien',
-      cover_url: null,
       description: 'There and back again.',
-    },
+    }),
   ];
 
   test('navigating to ScanResults looks the ISBN up and a result leads to Preview', async () => {
