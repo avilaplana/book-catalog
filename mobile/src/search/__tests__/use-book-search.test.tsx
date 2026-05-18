@@ -5,14 +5,15 @@ import {
   useBookSearch,
   type BookSearchResult,
 } from '../use-book-search';
+import { aBookSearchResult } from '../test-fixtures';
 
-const sampleResult: BookSearchResult = {
+const sampleResult: BookSearchResult = aBookSearchResult({
   google_books_id: 'vol-1',
   title: 'The Title',
   author: 'Alice',
   cover_url: 'https://example.com/c.jpg',
   description: 'A description.',
-};
+});
 
 function renderSearch(searchBooks: (q: string) => Promise<BookSearchResult[]>) {
   return renderHook(() => useBookSearch({ searchBooks }));

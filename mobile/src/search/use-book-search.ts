@@ -8,6 +8,14 @@ export type BookSearchResult = {
   author: string | null;
   cover_url: string | null;
   description: string | null;
+  subtitle: string | null;
+  publisher: string | null;
+  published_date: string | null;
+  page_count: number | null;
+  categories: string | null;
+  language: string | null;
+  isbn_13: string | null;
+  isbn_10: string | null;
 };
 
 export type SearchStatus =

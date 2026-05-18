@@ -2,15 +2,16 @@ import { act, renderHook, waitFor } from '@testing-library/react-native';
 
 import { NetworkError, ServerError } from '../../api/client';
 import { type BookSearchResult } from '../../search/use-book-search';
+import { aBookSearchResult } from '../../search/test-fixtures';
 import { useIsbnLookup } from '../use-isbn-lookup';
 
-const sampleResult: BookSearchResult = {
+const sampleResult: BookSearchResult = aBookSearchResult({
   google_books_id: 'vol-1',
   title: 'The Hobbit',
   author: 'J. R. R. Tolkien',
   cover_url: 'https://example.com/h.jpg',
   description: 'There and back again.',
-};
+});
 
 function renderLookup(
   isbn: string,

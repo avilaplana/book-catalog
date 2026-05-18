@@ -9,24 +9,22 @@ import {
 
 import { NetworkError, ServerError } from '../../api/client';
 import { type BookSearchResult } from '../../search/use-book-search';
+import { aBookSearchResult } from '../../search/test-fixtures';
 import { ScanResultsScreen } from '../ScanResultsScreen';
 import { ToastProvider } from '../../ui/toast';
 
 const sampleResults: BookSearchResult[] = [
-  {
+  aBookSearchResult({
     google_books_id: 'vol-1',
     title: 'The Hobbit',
     author: 'J. R. R. Tolkien',
     cover_url: 'https://example.com/h.jpg',
     description: 'There and back again.',
-  },
-  {
+  }),
+  aBookSearchResult({
     google_books_id: 'vol-2',
     title: 'The Hobbit (annotated)',
-    author: null,
-    cover_url: null,
-    description: null,
-  },
+  }),
 ];
 
 const ISBN = '9780261103573';

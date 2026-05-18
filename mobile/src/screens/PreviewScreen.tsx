@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,6 +10,7 @@ import {
 
 import { AuthExpired, Conflict } from '../api/client';
 import { type BookSearchResult } from '../search/use-book-search';
+import { BookDetails } from '../ui/BookDetails';
 import { useToast } from '../ui/toast';
 
 export type PreviewScreenProps = {
@@ -49,13 +49,18 @@ export function PreviewScreen({ result, addBook, onAdded }: PreviewScreenProps) 
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {result.cover_url ? (
-        <Image source={{ uri: result.cover_url }} style={styles.cover} />
-      ) : (
-        <View style={[styles.cover, styles.coverPlaceholder]} />
-      )}
-      <Text style={styles.title}>{result.title}</Text>
-      {result.author && <Text style={styles.author}>{result.author}</Text>}
+      <BookDetails
+        coverUrl={result.cover_url}
+        title={result.title}
+        subtitle={result.subtitle}
+        author={result.author}
+        publisher={result.publisher}
+        publishedDate={result.published_date}
+        pageCount={result.page_count}
+        categories={result.categories}
+        language={result.language}
+        isbn13={result.isbn_13}
+      />
       <Pressable
         style={[styles.addButton, adding && styles.addButtonDisabled]}
         disabled={adding}
@@ -69,24 +74,15 @@ export function PreviewScreen({ result, addBook, onAdded }: PreviewScreenProps) 
           <Text style={styles.addLabel}>Add to library</Text>
         )}
       </Pressable>
-      {result.description && (
+      {result.description ? (
         <Text style={styles.description}>{result.description}</Text>
-      )}
+      ) : null}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { padding: 24, alignItems: 'center', gap: 16 },
-  cover: {
-    width: 144,
-    height: 216,
-    borderRadius: 8,
-    backgroundColor: '#eee',
-  },
-  coverPlaceholder: { backgroundColor: '#ddd' },
-  title: { fontSize: 22, fontWeight: '600', textAlign: 'center' },
-  author: { color: '#555', fontSize: 16 },
   addButton: {
     paddingHorizontal: 24,
     paddingVertical: 14,

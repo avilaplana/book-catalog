@@ -11,6 +11,30 @@ const fullResult: BookSearchResult = {
   author: 'James Joyce',
   cover_url: 'https://example.com/u.jpg',
   description: 'A modernist novel about Leopold Bloom.',
+  subtitle: null,
+  publisher: null,
+  published_date: null,
+  page_count: null,
+  categories: null,
+  language: null,
+  isbn_13: null,
+  isbn_10: null,
+};
+
+const lordOfTheRings: BookSearchResult = {
+  google_books_id: 'vol-lotr',
+  title: 'The Lord of the Rings',
+  author: 'J.R.R. Tolkien',
+  cover_url: 'https://example.com/lotr.jpg',
+  description: 'An epic high-fantasy novel.',
+  subtitle: 'One Volume Edition',
+  publisher: 'HarperCollins',
+  published_date: '2005-10-25',
+  page_count: 1216,
+  categories: 'Fiction, Fantasy',
+  language: 'en',
+  isbn_13: '9780261103573',
+  isbn_10: '0261103571',
 };
 
 function renderPreview(opts: {
@@ -49,6 +73,19 @@ describe('PreviewScreen', () => {
     expect(screen.getByText('Ulysses')).toBeTruthy();
     expect(screen.queryByText('James Joyce')).toBeNull();
     expect(screen.queryByText(/A modernist novel/)).toBeNull();
+  });
+
+  test('renders rich fields (subtitle, metadata line, categories, ISBN-13)', () => {
+    renderPreview({ result: lordOfTheRings });
+
+    expect(screen.getByText('The Lord of the Rings')).toBeTruthy();
+    expect(screen.getByText('One Volume Edition')).toBeTruthy();
+    expect(
+      screen.getByText('HarperCollins · 2005-10-25 · 1216 pages · en'),
+    ).toBeTruthy();
+    expect(screen.getByText('Fiction, Fantasy')).toBeTruthy();
+    expect(screen.getByText('ISBN: 9780261103573')).toBeTruthy();
+    expect(screen.getByText('An epic high-fantasy novel.')).toBeTruthy();
   });
 
   test('Add: on success calls onAdded and shows a success toast', async () => {
